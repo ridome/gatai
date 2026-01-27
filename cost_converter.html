@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homehub HH2 vs HH4 Cost Comparison</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            display: inline-block;
+        }
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .rate-container {
+            font-size: 1.2em;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 5px;
+            vertical-align: middle;
+        }
+        th {
+            background-color: #1a2a44;
+            color: white;
+            text-align: center;
+        }
+        .sub-header th, .sub-header td {
+            background-color: #f9f9f9;
+            font-weight: bold;
+        }
+        .group-header {
+            background-color: #f0f8ff;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            border: none;
+            background: transparent;
+            font-family: inherit;
+            font-size: inherit;
+            padding: 4px;
+            box-sizing: border-box;
+        }
+        input:focus {
+            outline: 2px solid #007bff;
+            background-color: #fff;
+        }
+        .number-input {
+            text-align: right;
+        }
+        .yellow-bg {
+            background-color: #ffff00;
+        }
+        .text-red {
+            color: red;
+            font-weight: bold;
+        }
+        .text-red input {
+            color: red;
+            font-weight: bold;
+        }
+        .footer {
+            margin-top: 10px;
+            font-style: italic;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-container">
+        <h1>Homehub HH2 vs HH4 全科目成本对比</h1>
+        <div class="rate-container">
+            基准汇率: 1 USD = <input type="number" id="exchangeRate" value="7.0" step="0.1" style="width: 60px; border-bottom: 1px solid blue; text-align: center;"> RMB
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th rowspan="2" style="width: 5%;">级别</th>
+                <th rowspan="2" style="width: 10%;">科目</th>
+                <th colspan="3">Homehub HH2</th>
+                <th colspan="3">Homehub HH4</th>
+                <th rowspan="2" style="width: 15%;">备注</th>
+            </tr>
+            <tr>
+                <th style="width: 15%;">描述</th>
+                <th style="width: 10%;">RMB</th>
+                <th style="width: 10%;">USD</th>
+                <th style="width: 15%;">描述</th>
+                <th style="width: 10%;">RMB</th>
+                <th style="width: 10%;">USD</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Finished Product Summary -->
+            <tr class="sub-header">
+                <td>成品</td>
+                <td>成品总价</td>
+                <td><input type="text" value="总成本汇总" readonly></td>
+                <td><input type="number" id="hh2_total_rmb" class="number-input" readonly></td>
+                <td><input type="number" id="hh2_total_usd" class="number-input" readonly></td>
+                <td><input type="text" value="总成本汇总" readonly></td>
+                <td><input type="number" id="hh4_total_rmb" class="number-input" readonly></td>
+                <td><input type="number" id="hh4_total_usd" class="number-input" readonly></td>
+                <td><input type="text" value="成品=裸机+外围"></td>
+            </tr>
+
+            <!-- Accessories -->
+            <tr>
+                <td rowspan="5">外围</td>
+                <td>SD卡</td>
+                <td><input type="text" value="64GB TF卡"></td>
+                <td><input type="number" class="calc-input hh2-accessory-rmb number-input" value="0.00" step="0.01"></td>
+                <td><input type="number" class="calc-input hh2-accessory-usd number-input" step="0.001"></td>
+                <td><input type="text" value="64GB TF卡"></td>
+                <td><input type="number" class="calc-input hh4-accessory-rmb number-input" value="0.00" step="0.01"></td>
+                <td><input type="number" class="calc-input hh4-accessory-usd number-input" step="0.001"></td>
+                <td><input type="text" value="去SD卡一张?"></td>
+            </tr>
+            <tr>
+                <td>网线</td>
+                <td><input type="text" value="网线"></td>
+                <td><input type="number" class="calc-input hh2-accessory-rmb number-input" value="2.69" step="0.01"></td>
+                <td><input type="number" class="calc-input hh2-accessory-usd number-input" step="0.001"></td>
+                <td><input type="text" value="网线"></td>
+                <td><input type="number" class="calc-input hh4-accessory-rmb number-input" value="2.69" step="0.01"></td>
+                <td><input type="number" class="calc-input hh4-accessory-usd number-input" step="0.001"></td>
+                <td><input type="text" value="-"></td>
+            </tr>
+            <tr>
+                <td>电源适配器</td>
+                <td><input type="text" value="12V/1A"></td>
+                <td><input type="number" class="calc-input hh2-accessory-rmb number-input" value="8.60" step="0.01"></td>
+                <td><input type="number" class="calc-input hh2-accessory-usd number-input" step="0.001"></td>
+                <td class="text-red"><input type="text" value="12V/2A"></td>
+                <td class="yellow-bg"><input type="number" class="calc-input hh4-accessory-rmb number-input" value="10.00" step="0.01"></td>
+                <td class="yellow-bg"><input type="number" class="calc-input hh4-accessory-usd number-input" step="0.001"></td>
+                <td><input type="text" value="HH4功耗提升"></td>
+            </tr>
+            <tr>
+                <td>包装</td>
+                <td><input type="text" value="包装/贴纸/说明书"></td>
+                <td><input type="number" class="calc-input hh2-accessory-rmb number-input" value="5.36" step="0.01"></td>
+                <td><input type="number" class="calc-input hh2-accessory-usd number-input" step="0.001"></td>
+                <td><input type="text" value="包装/贴纸/说明书"></td>
+                <td><input type="number" class="calc-input hh4-accessory-rmb number-input" value="5.36" step="0.01"></td>
+                <td><input type="number" class="calc-input hh4-accessory-usd number-input" step="0.001"></td>
+                <td><input type="text" value="-"></td>
+            </tr>
+            <tr>
+                <td>成品加工费</td>
+                <td><input type="text" value="加工工费"></td>
+                <td><input type="number" class="calc-input hh2-accessory-rmb number-input" value="5.92" step="0.01"></td>
+                <td><input type="number" class="calc-input hh2-accessory-usd number-input" step="0.001"></td>
+                <td><input type="text" value="加工工费"></td>
+                <td><input type="number" class="calc-input hh4-accessory-rmb number-input" value="5.92" step="0.01"></td>
+                <td><input type="number" class="calc-input hh4-accessory-usd number-input" step="0.001"></td>
+                <td><input type="text" value="-"></td>
+            </tr>
+
+            <!-- Bare Unit Summary -->
+            <tr class="sub-header">
+                <td>裸机</td>
+                <td>裸机汇总</td>
+                <td><input type="text" value="裸机总成本" readonly></td>
+                <td><input type="number" id="hh2_bare_rmb" class="number-input" readonly></td>
+                <td><input type="number" id="hh2_bare_usd" class="number-input" readonly></td>
+                <td><input type="text" value="裸机总成本" readonly></td>
+                <td><input type="number" id="hh4_bare_rmb" class="number-input" readonly></td>
+                <td><input type="number" id="hh4_bare_usd" class="number-input" readonly></td>
+                <td><input type="text" value="裸机=结构+PCBA"></td>
+            </tr>
+
+            <!-- Structure -->
+            <tr>
+                <td rowspan="7">结构</td>
+                <td>结构</td>
+                <td><input type="text" value="中壳/上盖/下盖"></td>
+                <td><input type="number" class="calc-input hh2-structure-rmb number-input" value="14.60" step="0.01"></td>
+                <td><input type="number" class="calc-input hh2-structure-usd number-input" step="0.001"></td>
+                <td class="text-red"><input type="text" value="增加SATA结构"></td>
+                <td class="yellow-bg"><input type="number" class="calc-input hh4-structure-rmb number-input" value="18.50" step="0.01"></td>
+                <td class="yellow-bg"><input type="number" class="calc-input hh4-structure-usd number-input" step="0.001"></td>
+                <td><input type="text" value="+1.5 USD"></td>
+            </tr>
+            <tr>
+                <td>五金成本</td>
+                <td><input type="text" value="散热片/支架"></td>
+                <td><input type="number" class="calc-input hh2-structure-rmb number-input" value="5.08" step="0.01"></td>
+                <td><input type="number" class="calc-input hh2-structure-usd number-input" step="0.001"></td>
+                <td><input type="text" value="低级材料"></td>
+                <td><input type="number" class="calc-input hh4-structure-rmb number-input" value="6.60" step="0.01"></td>
+                <td><input type="number" class="calc-input hh4-structure-usd number-input" step="0.001"></td>
+                <td><input type="text" value="增加一件"></td>
+            </tr>
+            <tr>
+                <td>散热风扇</td>
+                <td><input type="text" value="无"></td>
+                <td><input type="number" class="calc-input hh2-structure-rmb number-input" value="0.00" step="0.01"></td>
+                <td><input type="number" class="calc-input hh2-structure-usd number-input" step="0.001"></td>
+                <td class="text-red"><input type="text" value="主动散热风扇"></td>
+                <td class="yellow-bg"><input type="number" class="calc-input hh4-structure-rmb number-input" value="9.73" step="0.01"></td>
+                <td class="yellow-bg"><input type="number" class="calc-input hh4-structure-usd number-input" step="0.001"></td>
+                <td><input type="text" value="小风扇?"></td>
+            </tr>
+            <tr>
+                <td>喇叭/其它</td>
+                <td><input type="text" value="喇叭+硅胶垫"></td>
+                <td><input type="number" class="calc-input hh2-structure-rmb number-input" value="7.12" step="0.01"></td>
+                <td><input type="number" class="calc-input hh2-structure-usd number-input" step="0.001"></td>
+                <td><input type="text" value="喇叭+硅胶垫"></td>
+                <td><input type="number" class="calc-input hh4-structure-rmb number-input" value="5.41" step="0.01"></td>
+                <td><input type="number" class="calc-input hh4-structure-usd number-input" step="0.001"></td>
+                <td><input type="text" value="2.41+4.71(硅胶)"></td>
+            </tr>
+            <tr>
+                <td>天线</td>
+                <td><input type="text" value="5Gx2, 2.4Gx2, Sub1G"></td>
+                <td><input type="number" class="calc-input hh2-structure-rmb number-input" value="5.40" step="0.01"></td>
+                <td><input type="number" class="calc-input hh2-structure-usd number-input" step="0.001"></td>
+                <td class="text-red"><input type="text" value="去Sub 1G天线"></td>
+                <td><input type="number" class="calc-input hh4-structure-rmb number-input" value="5.40" step="0.01"></td>
+                <td><input type="number" class="calc-input hh4-structure-usd number-input" step="0.001"></td>
+                <td><input type="text" value="布局调整"></td>
+            </tr>
+            <tr>
+                <td>按键板/TF卡</td>
+                <td><input type="text" value="按键板+TF卡板"></td>
+                <td><input type="number" class="calc-input hh2-structure-rmb number-input" value="4.84" step="0.01"></td>
+                <td><input type="number" class="calc-input hh2-structure-usd number-input" step="0.001"></td>
+                <td class="text-red"><input type="text" value="去掉按键板"></td>
+                <td><input type="number" class="calc-input hh4-structure-rmb number-input" value="0.00" step="0.01"></td>
+                <td><input type="number" class="calc-input hh4-structure-usd number-input" step="0.001"></td>
+                <td><input type="text" value="3.56+1.28"></td>
+            </tr>
+            <tr>
+                <td>裸机加工费</td>
+                <td><input type="text" value="加工工费"></td>
+                <td><input type="number" class="calc-input hh2-structure-rmb number-input" value="17.89" step="0.01"></td>
+                <td><input type="number" class="calc-input hh2-structure-usd number-input" step="0.001"></td>
+                <td><input type="text" value="加工工费"></td>
+                <td><input type="number" class="calc-input hh4-structure-rmb number-input" value="17.89" step="0.01"></td>
+                <td><input type="number" class="calc-input hh4-structure-usd number-input" step="0.001"></td>
+                <td><input type="text" value="-"></td>
+            </tr>
+
+            <!-- Mainboard Summary -->
+            <tr class="group-header">
+                <td>主板</td>
+                <td>主板汇总</td>
+                <td><input type="text" value="PCBA总成本" readonly></td>
+                <td><input type="number" id="hh2_mainboard_rmb" class="number-input" readonly></td>
+                <td><input type="number" id="hh2_mainboard_usd" class="number-input" readonly></td>
+                <td><input type="text" value="PCBA总成本" readonly></td>
+                <td><input type="number" id="hh4_mainboard_rmb" class="number-input" readonly></td>
+                <td><input type="number" id="hh4_mainboard_usd" class="number-input" readonly></td>
+                <td><input type="text" value="底层物料"></td>
+            </tr>
+
+            <!-- PCBA -->
+            <tr>
+                <td rowspan="7">PCBA</td>
+                <td>SoC 主控</td>
+                <td><input type="text" value="560"></td>
+                <td><input type="number" class="calc-input hh2-pcba-rmb number-input" value="15.265" step="0.001"></td>
+                <td><input type="number" class="calc-input hh2-pcba-usd number-input" step="0.001"></td>
+                <td class="text-red"><input type="text" value="538A"></td>
+                <td class="yellow-bg"><input type="number" class="calc-input hh4-pcba-rmb number-input" value="26.98" step="0.01"></td>
+                <td class="yellow-bg"><input type="number" class="calc-input hh4-pcba-usd number-input" step="0.001"></td>
+                <td><input type="text" value="更换芯片"></td>
+            </tr>
+            <tr>
+                <td>DDR 内存</td>
+                <td><input type="text" value="DDR3/4Gb/2133"></td>
+                <td><input type="number" class="calc-input hh2-pcba-rmb number-input" value="35.000" step="0.001"></td>
+                <td><input type="number" class="calc-input hh2-pcba-usd number-input" step="0.001"></td>
+                <td class="text-red"><input type="text" value="2x DDR3/4Gb"></td>
+                <td class="yellow-bg"><input type="number" class="calc-input hh4-pcba-rmb number-input" value="0.00" step="0.01"></td>
+                <td class="yellow-bg"><input type="number" class="calc-input hh4-pcba-usd number-input" step="0.001"></td>
+                <td class="yellow-bg"><input type="text" value="1GB 内存"></td>
+            </tr>
+            <tr>
+                <td>WIFI/AP</td>
+                <td><input type="text" value="RTL8197H系列"></td>
+                <td><input type="number" class="calc-input hh2-pcba-rmb number-input" value="62.51" step="0.01"></td>
+                <td><input type="number" class="calc-input hh2-pcba-usd number-input" step="0.001"></td>
+                <td><input type="text" value="RTL8197H系列"></td>
+                <td><input type="number" class="calc-input hh4-pcba-rmb number-input" value="62.51" step="0.01"></td>
+                <td><input type="number" class="calc-input hh4-pcba-usd number-input" step="0.001"></td>
+                <td><input type="text" value="-"></td>
+            </tr>
+            <tr>
+                <td>Flash</td>
+                <td><input type="text" value="GD5F1G (1Gb)"></td>
+                <td><input type="number" class="calc-input hh2-pcba-rmb number-input" value="11.72" step="0.01"></td>
+                <td><input type="number" class="calc-input hh2-pcba-usd number-input" step="0.001"></td>
+                <td><input type="text" value="GD5F1G (1Gb)"></td>
+                <td><input type="number" class="calc-input hh4-pcba-rmb number-input" value="11.72" step="0.01"></td>
+                <td><input type="number" class="calc-input hh4-pcba-usd number-input" step="0.001"></td>
+                <td><input type="text" value="-"></td>
+            </tr>
+            <tr>
+                <td>SATA外扩</td>
+                <td><input type="text" value="无"></td>
+                <td><input type="number" class="calc-input hh2-pcba-rmb number-input" value="0.00" step="0.01"></td>
+                <td><input type="number" class="calc-input hh2-pcba-usd number-input" step="0.001"></td>
+                <td class="text-red"><input type="text" value="ASM 1153E"></td>
+                <td class="yellow-bg"><input type="number" class="calc-input hh4-pcba-rmb number-input" value="1.59" step="0.01"></td>
+                <td class="yellow-bg"><input type="number" class="calc-input hh4-pcba-usd number-input" step="0.001"></td>
+                <td><input type="text" value="新增"></td>
+            </tr>
+            <tr>
+                <td>PCB/射频/其它</td>
+                <td><input type="text" value="PCB+Sub1G+阻容"></td>
+                <td><input type="number" class="calc-input hh2-pcba-rmb number-input" value="22.01" step="0.01"></td>
+                <td><input type="number" class="calc-input hh2-pcba-usd number-input" step="0.001"></td>
+                <td><input type="text" value="PCB+阻容优化"></td>
+                <td><input type="number" class="calc-input hh4-pcba-rmb number-input" value="10.10" step="0.01"></td>
+                <td><input type="number" class="calc-input hh4-pcba-usd number-input" step="0.001"></td>
+                <td><input type="text" value="子项汇总"></td>
+            </tr>
+            <tr>
+                <td>加工费</td>
+                <td><input type="text" value="PCBA加工费"></td>
+                <td><input type="number" class="calc-input hh2-pcba-rmb number-input" value="8.31" step="0.01"></td>
+                <td><input type="number" class="calc-input hh2-pcba-usd number-input" step="0.001"></td>
+                <td><input type="text" value="PCBA加工费"></td>
+                <td><input type="number" class="calc-input hh4-pcba-rmb number-input" value="8.31" step="0.01"></td>
+                <td><input type="number" class="calc-input hh4-pcba-usd number-input" step="0.001"></td>
+                <td><input type="text" value="-"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="footer">
+        💡 功能提示: 你可以直接修改 RMB 或 USD，另一方会根据汇率自动计算。所有改动会实时更新三级汇总。
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const exchangeRateInput = document.getElementById('exchangeRate');
+            const inputs = document.querySelectorAll('input.calc-input');
+
+            // Initial calculation
+            recalculateAll('rmb');
+
+            // Event Listeners
+            exchangeRateInput.addEventListener('input', function() {
+                recalculateAll('rmb'); // Recalculate USD based on RMB
+            });
+
+            inputs.forEach(input => {
+                input.addEventListener('input', function(e) {
+                    const row = e.target.closest('tr');
+                    const classes = e.target.classList;
+
+                    // Determine if RMB or USD changed
+                    let isRmb = false;
+                    let counterpartClass = '';
+
+                    if (classes.contains('hh2-accessory-rmb')) { isRmb = true; counterpartClass = 'hh2-accessory-usd'; }
+                    else if (classes.contains('hh2-accessory-usd')) { isRmb = false; counterpartClass = 'hh2-accessory-rmb'; }
+                    else if (classes.contains('hh4-accessory-rmb')) { isRmb = true; counterpartClass = 'hh4-accessory-usd'; }
+                    else if (classes.contains('hh4-accessory-usd')) { isRmb = false; counterpartClass = 'hh4-accessory-rmb'; }
+
+                    else if (classes.contains('hh2-structure-rmb')) { isRmb = true; counterpartClass = 'hh2-structure-usd'; }
+                    else if (classes.contains('hh2-structure-usd')) { isRmb = false; counterpartClass = 'hh2-structure-rmb'; }
+                    else if (classes.contains('hh4-structure-rmb')) { isRmb = true; counterpartClass = 'hh4-structure-usd'; }
+                    else if (classes.contains('hh4-structure-usd')) { isRmb = false; counterpartClass = 'hh4-structure-rmb'; }
+
+                    else if (classes.contains('hh2-pcba-rmb')) { isRmb = true; counterpartClass = 'hh2-pcba-usd'; }
+                    else if (classes.contains('hh2-pcba-usd')) { isRmb = false; counterpartClass = 'hh2-pcba-rmb'; }
+                    else if (classes.contains('hh4-pcba-rmb')) { isRmb = true; counterpartClass = 'hh4-pcba-usd'; }
+                    else if (classes.contains('hh4-pcba-usd')) { isRmb = false; counterpartClass = 'hh4-pcba-rmb'; }
+
+                    if (counterpartClass) {
+                        const rate = parseFloat(exchangeRateInput.value) || 0;
+                        const counterpartInput = row.querySelector('.' + counterpartClass);
+                        const val = parseFloat(e.target.value);
+
+                        if (!isNaN(val) && rate !== 0) {
+                            if (isRmb) {
+                                counterpartInput.value = (val / rate).toFixed(3);
+                            } else {
+                                counterpartInput.value = (val * rate).toFixed(2); // RMB usually 2 decimals
+                            }
+                        } else if (e.target.value === '') {
+                             counterpartInput.value = '';
+                        }
+                    }
+
+                    calculateSummaries();
+                });
+            });
+
+            function recalculateAll(base) {
+                const rate = parseFloat(exchangeRateInput.value) || 0;
+                if (rate === 0) return;
+
+                const groups = ['hh2-accessory', 'hh4-accessory', 'hh2-structure', 'hh4-structure', 'hh2-pcba', 'hh4-pcba'];
+
+                groups.forEach(group => {
+                    const rmbInputs = document.querySelectorAll('.' + group + '-rmb');
+                    const usdInputs = document.querySelectorAll('.' + group + '-usd');
+
+                    if (base === 'rmb') {
+                        rmbInputs.forEach((input, index) => {
+                            const val = parseFloat(input.value);
+                            if (!isNaN(val)) {
+                                usdInputs[index].value = (val / rate).toFixed(3);
+                            }
+                        });
+                    } else {
+                         // Implement if needed, currently defaulting to RMB base on rate change
+                         usdInputs.forEach((input, index) => {
+                            const val = parseFloat(input.value);
+                            if (!isNaN(val)) {
+                                rmbInputs[index].value = (val * rate).toFixed(2);
+                            }
+                        });
+                    }
+                });
+                calculateSummaries();
+            }
+
+            function calculateSummaries() {
+                // Sum helper
+                function sumInputs(selector) {
+                    let sum = 0;
+                    document.querySelectorAll(selector).forEach(input => {
+                        const val = parseFloat(input.value);
+                        if (!isNaN(val)) sum += val;
+                    });
+                    return sum;
+                }
+
+                // PCBA
+                const hh2_pcba_rmb = sumInputs('.hh2-pcba-rmb');
+                const hh2_pcba_usd = sumInputs('.hh2-pcba-usd');
+                const hh4_pcba_rmb = sumInputs('.hh4-pcba-rmb');
+                const hh4_pcba_usd = sumInputs('.hh4-pcba-usd');
+
+                document.getElementById('hh2_mainboard_rmb').value = hh2_pcba_rmb.toFixed(3); // Using 3 decimals for summary to match image precision? Image has 154.815
+                document.getElementById('hh2_mainboard_usd').value = hh2_pcba_usd.toFixed(3);
+                document.getElementById('hh4_mainboard_rmb').value = hh4_pcba_rmb.toFixed(3);
+                document.getElementById('hh4_mainboard_usd').value = hh4_pcba_usd.toFixed(3);
+
+                // Structure
+                const hh2_structure_rmb = sumInputs('.hh2-structure-rmb');
+                const hh2_structure_usd = sumInputs('.hh2-structure-usd');
+                const hh4_structure_rmb = sumInputs('.hh4-structure-rmb');
+                const hh4_structure_usd = sumInputs('.hh4-structure-usd');
+
+                // Bare Unit = Structure + PCBA
+                const hh2_bare_rmb = hh2_structure_rmb + hh2_pcba_rmb;
+                const hh2_bare_usd = hh2_structure_usd + hh2_pcba_usd;
+                const hh4_bare_rmb = hh4_structure_rmb + hh4_pcba_rmb;
+                const hh4_bare_usd = hh4_structure_usd + hh4_pcba_usd;
+
+                document.getElementById('hh2_bare_rmb').value = hh2_bare_rmb.toFixed(3);
+                document.getElementById('hh2_bare_usd').value = hh2_bare_usd.toFixed(3);
+                document.getElementById('hh4_bare_rmb').value = hh4_bare_rmb.toFixed(3);
+                document.getElementById('hh4_bare_usd').value = hh4_bare_usd.toFixed(3);
+
+                // Accessories
+                const hh2_accessory_rmb = sumInputs('.hh2-accessory-rmb');
+                const hh2_accessory_usd = sumInputs('.hh2-accessory-usd');
+                const hh4_accessory_rmb = sumInputs('.hh4-accessory-rmb');
+                const hh4_accessory_usd = sumInputs('.hh4-accessory-usd');
+
+                // Finished Product = Bare Unit + Accessories
+                const hh2_total_rmb = hh2_bare_rmb + hh2_accessory_rmb;
+                const hh2_total_usd = hh2_bare_usd + hh2_accessory_usd;
+                const hh4_total_rmb = hh4_bare_rmb + hh4_accessory_rmb;
+                const hh4_total_usd = hh4_bare_usd + hh4_accessory_usd;
+
+                document.getElementById('hh2_total_rmb').value = hh2_total_rmb.toFixed(3);
+                document.getElementById('hh2_total_usd').value = hh2_total_usd.toFixed(3);
+                document.getElementById('hh4_total_rmb').value = hh4_total_rmb.toFixed(3);
+                document.getElementById('hh4_total_usd').value = hh4_total_usd.toFixed(3);
+            }
+        });
+    </script>
+</body>
+</html>

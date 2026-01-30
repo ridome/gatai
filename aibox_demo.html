@@ -391,7 +391,15 @@
 
             <div class="form-group" style="margin-top: 20px;">
                 <label class="form-label">分类标签 (例如: 门开/门关)</label>
-                <input type="text" class="form-input" placeholder="输入标签名称...">
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="plana-label-input" class="form-input" placeholder="输入标签名称 (如: 开门)">
+                    <button class="btn-primary" style="width: auto; margin-top: 0; padding: 12px 20px;" onclick="takeSnapshot()">截图</button>
+                </div>
+            </div>
+
+            <!-- Captured Images List -->
+            <div id="plana-images-list" class="image-grid" style="margin-bottom: 20px;">
+                <!-- Snapshots will appear here -->
             </div>
 
             <div class="floating-footer" style="position: relative; padding: 0; box-shadow: none; margin-top: 30px;">
@@ -502,6 +510,7 @@
     // State
     let categories = [];
     let rois = [];
+    let planAImages = [];
     let currentPlan = '';
 
     // ROI Drawing State
@@ -635,7 +644,11 @@
 
         // Initialize ROI if Plan A
         if(viewId === 'plan-a') {
-            renderROIs(); // Ensure clean state or existing state
+            planAImages = [];
+            renderROIs();
+            renderPlanAImages();
+            const input = document.getElementById('plana-label-input');
+            if(input) input.value = '';
         }
     }
 
@@ -771,7 +784,89 @@
         }
     }
 
+    function takeSnapshot() {
+        const input = document.getElementById('plana-label-input');
+        const label = input.value.trim();
+
+        if (!label) {
+            alert("请先输入分类标签！");
+            return;
+        }
+
+        if (rois.length === 0) {
+            alert("请先绘制 ROI 区域！");
+            return;
+        }
+
+        planAImages.push({
+            id: Date.now(),
+            label: label,
+            src: 'placeholder.jpg'
+        });
+
+        renderPlanAImages();
+    }
+
+    function removePlanAImage(id) {
+        planAImages = planAImages.filter(img => img.id !== id);
+        renderPlanAImages();
+    }
+
+    function renderPlanAImages() {
+        const container = document.getElementById('plana-images-list');
+        if(!container) return;
+
+        container.innerHTML = '';
+
+        planAImages.forEach(img => {
+            const div = document.createElement('div');
+            div.className = 'image-thumb';
+            div.style.position = 'relative';
+            div.style.flexDirection = 'column';
+
+            const labelDiv = document.createElement('div');
+            labelDiv.style.cssText = "font-weight:bold; margin-bottom:4px; font-size:10px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; width:100%; text-align:center;";
+            labelDiv.textContent = img.label;
+
+            const imgDiv = document.createElement('div');
+            imgDiv.textContent = "IMG";
+
+            div.appendChild(labelDiv);
+            div.appendChild(imgDiv);
+
+            // Delete button
+            const delBtn = document.createElement('div');
+            delBtn.onclick = (e) => { e.stopPropagation(); removePlanAImage(img.id); };
+            delBtn.style.position = 'absolute';
+            delBtn.style.top = '0';
+            delBtn.style.right = '0';
+            delBtn.style.background = 'rgba(220,53,69,0.8)';
+            delBtn.style.color = 'white';
+            delBtn.style.width = '20px';
+            delBtn.style.height = '20px';
+            delBtn.style.display = 'flex';
+            delBtn.style.alignItems = 'center';
+            delBtn.style.justifyContent = 'center';
+            delBtn.style.cursor = 'pointer';
+            delBtn.style.fontSize = '14px';
+            delBtn.innerText = '×';
+
+            div.appendChild(delBtn);
+            container.appendChild(div);
+        });
+    }
+
     function finishTraining() {
+        const planAView = document.getElementById('plan-a');
+        if (planAView && planAView.classList.contains('active')) {
+             if (rois.length === 0) {
+                 alert("请先绘制 ROI 区域！");
+                 return;
+             }
+             alert(`[PLAN A] 开始训练! \nROI数量: ${rois.length}\n采集样本: ${planAImages.length}`);
+             return;
+        }
+
         if(currentPlan) {
             alert(`[${currentPlan}] 开始根据采集的数据进行训练...`);
         } else {

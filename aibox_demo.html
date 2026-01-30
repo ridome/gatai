@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Box Demo</title>
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --background-color: #f4f6f8;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --secondary-text: #666666;
+            --border-radius: 12px;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--background-color);
+            margin: 0;
+            padding: 0;
+            color: var(--text-color);
+        }
+
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            min-height: 100vh;
+            background-color: #fff;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 16px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .back-btn {
+            position: absolute;
+            left: 16px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        /* Content */
+        .content {
+            padding: 16px;
+        }
+
+        /* Cards */
+        .card {
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 1px solid #eee;
+        }
+
+        .card:active {
+            transform: scale(0.98);
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: var(--primary-color);
+        }
+
+        .card-desc {
+            font-size: 14px;
+            color: var(--secondary-text);
+            line-height: 1.5;
+        }
+
+        /* Detail View Elements */
+        .detail-section {
+            margin-top: 20px;
+        }
+
+        .placeholder-box {
+            background-color: #e9ecef;
+            border: 2px dashed #ced4da;
+            border-radius: 8px;
+            height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .form-input, .form-select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        .btn-primary {
+            display: block;
+            width: 100%;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .btn-primary:active {
+            background-color: #0056b3;
+        }
+
+        /* Option Selection for Plan D */
+        .option-card {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+        }
+
+        .option-card.selected {
+            border-color: var(--primary-color);
+            background-color: #f0f7ff;
+        }
+
+        /* View Navigation */
+        .view {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- Home View -->
+    <div id="home-view" class="view active">
+        <div class="header">
+            AI Box 模型训练
+        </div>
+        <div class="content">
+            <div class="card" onclick="showView('plan-a')">
+                <div class="card-title">PLAN A: ROI + 分类器</div>
+                <div class="card-desc">适用于门窗等不会运动的物体，或者体积在画面中比较大的物体。</div>
+            </div>
+
+            <div class="card" onclick="showView('plan-b')">
+                <div class="card-title">PLAN B: Clip + 分类器</div>
+                <div class="card-desc">利用Clip提取语义特征。适用于如：带不带工牌、垃圾桶是否满溢等场景。</div>
+            </div>
+
+            <div class="card" onclick="showView('plan-c')">
+                <div class="card-title">PLAN C: PPVD + 增强分类</div>
+                <div class="card-desc">PPVD + 预训练分类器 + 用户数据增强。适用于区分动物、车辆、包裹等。</div>
+            </div>
+
+            <div class="card" onclick="showView('plan-d')">
+                <div class="card-title">PLAN D: 自训练检测 & 分类</div>
+                <div class="card-desc">AI BOX 高级模式。训练YOLO系列检测模型或自定义分类模型。</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Plan A View -->
+    <div id="plan-a" class="view">
+        <div class="header">
+            <button class="back-btn" onclick="showView('home-view')">←</button>
+            ROI + 分类器
+        </div>
+        <div class="content">
+            <p style="color: #666;">请在画面中框选您关注的静止物体区域（ROI）。</p>
+            <div class="placeholder-box">
+                摄像头预览 / ROI 框选区域
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">分类标签 (例如: 门开/门关)</label>
+                <input type="text" class="form-input" placeholder="输入标签名称...">
+            </div>
+
+            <button class="btn-primary" onclick="startTraining('PLAN A')">开始采集与训练</button>
+        </div>
+    </div>
+
+    <!-- Plan B View -->
+    <div id="plan-b" class="view">
+        <div class="header">
+            <button class="back-btn" onclick="showView('home-view')">←</button>
+            Clip + 分类器
+        </div>
+        <div class="content">
+            <p style="color: #666;">利用语义特征进行识别。请输入描述或上传示例。</p>
+
+            <div class="form-group">
+                <label class="form-label">场景描述 (Prompt)</label>
+                <input type="text" class="form-input" placeholder="例如: 垃圾桶满了">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">参考图片 (可选)</label>
+                <div class="placeholder-box" style="height: 100px;">
+                    点击上传参考图
+                </div>
+            </div>
+
+            <button class="btn-primary" onclick="startTraining('PLAN B')">生成特征并训练</button>
+        </div>
+    </div>
+
+    <!-- Plan C View -->
+    <div id="plan-c" class="view">
+        <div class="header">
+            <button class="back-btn" onclick="showView('home-view')">←</button>
+            PPVD + 增强分类
+        </div>
+        <div class="content">
+            <p style="color: #666;">使用预训练模型并增强数据，适合区分特定对象。</p>
+
+            <div class="form-group">
+                <label class="form-label">选择基础模型</label>
+                <select class="form-select">
+                    <option>通用物体 (PPVD)</option>
+                    <option>动物识别</option>
+                    <option>车辆识别</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">增强数据源</label>
+                <select class="form-select">
+                    <option>本地上传</option>
+                    <option>从摄像头采集</option>
+                </select>
+            </div>
+
+            <button class="btn-primary" onclick="startTraining('PLAN C')">开始增强训练</button>
+        </div>
+    </div>
+
+    <!-- Plan D View -->
+    <div id="plan-d" class="view">
+        <div class="header">
+            <button class="back-btn" onclick="showView('home-view')">←</button>
+            自训练检测 & 分类
+        </div>
+        <div class="content">
+            <p style="color: #666;">请选择您要训练的模型类型：</p>
+
+            <div class="option-card" onclick="selectOption(this)" id="opt-yolo">
+                <div style="font-weight: bold;">训练检测模型 (YOLO系列)</div>
+                <div style="font-size: 12px; color: #666;">检测物体的位置和类别</div>
+            </div>
+
+            <div class="option-card" onclick="selectOption(this)" id="opt-cls">
+                <div style="font-weight: bold;">训练分类模型</div>
+                <div style="font-size: 12px; color: #666;">仅识别图像的整体类别</div>
+            </div>
+
+            <button class="btn-primary" onclick="startTraining('PLAN D')">下一步</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function showView(viewId) {
+        // Hide all views
+        document.querySelectorAll('.view').forEach(view => {
+            view.classList.remove('active');
+        });
+        // Show target view
+        document.getElementById(viewId).classList.add('active');
+
+        // Reset selections if necessary
+        if(viewId === 'plan-d') {
+            document.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+        }
+    }
+
+    function selectOption(element) {
+        // Deselect all options in the container
+        element.parentElement.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+        // Select clicked option
+        element.classList.add('selected');
+    }
+
+    function startTraining(planName) {
+        if (planName === 'PLAN D') {
+            const selected = document.querySelector('#plan-d .option-card.selected');
+            if (!selected) {
+                alert("请先选择一种模型类型！");
+                return;
+            }
+            alert(`正在配置 ${planName} - ${selected.firstElementChild.innerText}...`);
+        } else {
+            alert(`正在启动 ${planName} 训练流程...`);
+        }
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Box Demo</title>
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --background-color: #f4f6f8;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --secondary-text: #666666;
+            --border-radius: 12px;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --danger-color: #dc3545;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--background-color);
+            margin: 0;
+            padding: 0;
+            color: var(--text-color);
+        }
+
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            min-height: 100vh;
+            background-color: #fff;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 16px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .back-btn {
+            position: absolute;
+            left: 16px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        /* Content */
+        .content {
+            padding: 16px;
+            padding-bottom: 80px; /* Space for sticky button */
+        }
+
+        /* Cards */
+        .card {
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 1px solid #eee;
+        }
+
+        .card:active {
+            transform: scale(0.98);
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: var(--primary-color);
+        }
+
+        .card-desc {
+            font-size: 14px;
+            color: var(--secondary-text);
+            line-height: 1.5;
+        }
+
+        /* Detail View Elements */
+        .detail-section {
+            margin-top: 20px;
+        }
+
+        .placeholder-box {
+            background-color: #e9ecef;
+            border: 2px dashed #ced4da;
+            border-radius: 8px;
+            height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .form-input, .form-select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        .btn-primary {
+            display: block;
+            width: 100%;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .btn-primary:active {
+            background-color: #0056b3;
+        }
+
+        /* Option Selection for Plan D */
+        .option-card {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+        }
+
+        .option-card.selected {
+            border-color: var(--primary-color);
+            background-color: #f0f7ff;
+        }
+
+        /* Dataset View specific styles */
+        .category-card {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .category-input {
+            border: none;
+            border-bottom: 1px solid #ccc;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 4px;
+            width: 70%;
+            outline: none;
+        }
+
+        .category-input:focus {
+            border-bottom-color: var(--primary-color);
+        }
+
+        .btn-delete {
+            background: none;
+            border: 1px solid #dc3545;
+            color: #dc3545;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .image-thumb {
+            width: 100%;
+            aspect-ratio: 1;
+            background-color: #f0f0f0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: #999;
+            border: 1px solid #eee;
+            overflow: hidden;
+        }
+
+        .image-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .add-image-btn {
+            width: 100%;
+            aspect-ratio: 1;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            background: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #ccc;
+            cursor: pointer;
+        }
+
+        .add-category-btn {
+            background-color: white;
+            color: var(--primary-color);
+            border: 2px dashed var(--primary-color);
+            padding: 12px;
+            border-radius: 12px;
+            width: 100%;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        /* ROI Styles */
+        .roi-container {
+            position: relative;
+            width: 100%;
+            height: 250px;
+            background-color: #e9ecef;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            border: 2px solid #ccc;
+            cursor: crosshair;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect fill="%23ddd" width="100" height="100"/><text x="50" y="50" font-family="Arial" font-size="12" text-anchor="middle" fill="%23999">Camera Preview</text></svg>');
+            background-size: cover;
+        }
+
+        .roi-box {
+            position: absolute;
+            border: 2px solid var(--danger-color);
+            background-color: rgba(220, 53, 69, 0.2);
+            box-sizing: border-box;
+        }
+
+        .roi-delete-btn {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 20px;
+            height: 20px;
+            background-color: var(--danger-color);
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .roi-list {
+            margin-top: 10px;
+        }
+
+        .roi-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+
+        .floating-footer {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 480px;
+            padding: 16px;
+            background: white;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            box-sizing: border-box;
+            z-index: 1000;
+        }
+
+        /* View Navigation */
+        .view {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- Home View -->
+    <div id="home-view" class="view active">
+        <div class="header">
+            AI Box 模型训练
+        </div>
+        <div class="content">
+            <div class="card" onclick="showView('plan-a')">
+                <div class="card-title">PLAN A: ROI + 分类器</div>
+                <div class="card-desc">适用于门窗等不会运动的物体，或者体积在画面中比较大的物体。</div>
+            </div>
+
+            <div class="card" onclick="showView('plan-b')">
+                <div class="card-title">PLAN B: Clip + 分类器</div>
+                <div class="card-desc">利用Clip提取语义特征。适用于如：带不带工牌、垃圾桶是否满溢等场景。</div>
+            </div>
+
+            <div class="card" onclick="showView('plan-c')">
+                <div class="card-title">PLAN C: PPVD + 增强分类</div>
+                <div class="card-desc">PPVD 检测 (人/车/动物/包裹) + 用户数据增强训练。</div>
+            </div>
+
+            <div class="card" onclick="showView('plan-d')">
+                <div class="card-title">PLAN D: 自训练检测 & 分类</div>
+                <div class="card-desc">AI BOX 高级模式。训练YOLO系列检测模型或自定义分类模型。</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Plan A View (ROI) -->
+    <div id="plan-a" class="view">
+        <div class="header">
+            <button class="back-btn" onclick="showView('home-view')">←</button>
+            ROI + 分类器
+        </div>
+        <div class="content">
+            <p style="color: #666; font-size: 14px;">在预览画面上拖动鼠标以框选 ROI 区域。</p>
+
+            <div id="roi-container" class="roi-container">
+                <!-- ROI boxes will be drawn here -->
+            </div>
+
+            <div class="roi-list" id="roi-list">
+                <!-- List of ROIs -->
+            </div>
+
+            <div class="form-group" style="margin-top: 20px;">
+                <label class="form-label">分类标签 (例如: 门开/门关)</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="plana-label-input" class="form-input" placeholder="输入标签名称 (如: 开门)">
+                    <button class="btn-primary" style="width: auto; margin-top: 0; padding: 12px 20px;" onclick="takeSnapshot()">截图</button>
+                </div>
+            </div>
+
+            <!-- Captured Images List -->
+            <div id="plana-images-list" class="image-grid" style="margin-bottom: 20px;">
+                <!-- Snapshots will appear here -->
+            </div>
+
+            <div class="floating-footer" style="position: relative; padding: 0; box-shadow: none; margin-top: 30px;">
+                <button class="btn-primary" onclick="finishTraining()">开始训练</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Plan B View -->
+    <div id="plan-b" class="view">
+        <div class="header">
+            <button class="back-btn" onclick="showView('home-view')">←</button>
+            Clip + 分类器
+        </div>
+        <div class="content">
+            <p style="color: #666;">利用语义特征进行识别。请输入描述或上传示例。</p>
+
+            <div class="form-group">
+                <label class="form-label">场景描述 (Prompt)</label>
+                <input type="text" class="form-input" placeholder="例如: 垃圾桶满了">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">参考图片 (可选)</label>
+                <div class="placeholder-box" style="height: 100px;">
+                    点击上传参考图
+                </div>
+            </div>
+
+            <button class="btn-primary" onclick="startTraining('PLAN B')">下一步: 采集数据</button>
+        </div>
+    </div>
+
+    <!-- Plan C View -->
+    <div id="plan-c" class="view">
+        <div class="header">
+            <button class="back-btn" onclick="showView('home-view')">←</button>
+            PPVD + 增强分类
+        </div>
+        <div class="content">
+            <p style="color: #666;">PPVD是检测模型，能够检测 人、车、动物、包裹。</p>
+            <p style="color: #666; font-size: 14px;">您可以增加自定义分类标签，并上传相应数据进行增强训练。</p>
+
+            <div class="option-card" onclick="selectOption(this); document.getElementById('ppvd-dataset-btn').innerText = '配置 [人] 类增强数据'">
+                <div style="font-weight: bold;">人 (Person)</div>
+            </div>
+            <div class="option-card" onclick="selectOption(this); document.getElementById('ppvd-dataset-btn').innerText = '配置 [车] 类增强数据'">
+                <div style="font-weight: bold;">车 (Vehicle)</div>
+            </div>
+            <div class="option-card" onclick="selectOption(this); document.getElementById('ppvd-dataset-btn').innerText = '配置 [动物] 类增强数据'">
+                <div style="font-weight: bold;">动物 (Animal)</div>
+            </div>
+            <div class="option-card" onclick="selectOption(this); document.getElementById('ppvd-dataset-btn').innerText = '配置 [包裹] 类增强数据'">
+                <div style="font-weight: bold;">包裹 (Package)</div>
+            </div>
+
+            <button id="ppvd-dataset-btn" class="btn-primary" onclick="startTraining('PLAN C')">开始数据采集</button>
+        </div>
+    </div>
+
+    <!-- Plan D View -->
+    <div id="plan-d" class="view">
+        <div class="header">
+            <button class="back-btn" onclick="showView('home-view')">←</button>
+            自训练检测 & 分类
+        </div>
+        <div class="content">
+            <p style="color: #666;">请选择您要训练的模型类型：</p>
+
+            <div class="option-card" onclick="selectOption(this)" id="opt-yolo">
+                <div style="font-weight: bold;">训练检测模型 (YOLO系列)</div>
+                <div style="font-size: 12px; color: #666;">检测物体的位置和类别</div>
+            </div>
+
+            <div class="option-card" onclick="selectOption(this)" id="opt-cls">
+                <div style="font-weight: bold;">训练分类模型</div>
+                <div style="font-size: 12px; color: #666;">仅识别图像的整体类别</div>
+            </div>
+
+            <button class="btn-primary" onclick="startTraining('PLAN D')">下一步</button>
+        </div>
+    </div>
+
+    <!-- Dataset Management View (Generic) -->
+    <div id="dataset-view" class="view">
+        <div class="header">
+            <button class="back-btn" onclick="goBackFromDataset()">←</button>
+            <span id="dataset-title">数据采集</span>
+        </div>
+        <div class="content" style="padding-bottom: 100px;">
+            <p style="color: #666; font-size: 14px;">请添加/编辑分类，并为每个分类上传训练图片。</p>
+
+            <div id="category-list">
+                <!-- Categories will be rendered here -->
+            </div>
+
+            <button class="add-category-btn" onclick="addCategory()">+ 添加分类</button>
+        </div>
+
+        <div class="floating-footer">
+            <button class="btn-primary" style="margin-top: 0;" onclick="finishTraining()">开始训练</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // State
+    let categories = [];
+    let rois = [];
+    let planAImages = [];
+    let currentPlan = '';
+
+    // ROI Drawing State
+    let isDrawing = false;
+    let startX, startY;
+    let currentBox = null;
+    const roiContainer = document.getElementById('roi-container');
+
+    // ROI Event Listeners
+    roiContainer.addEventListener('mousedown', (e) => {
+        // Only start if clicking directly on container or existing box (if we want to move/resize later, but simple for now)
+        if(e.target.classList.contains('roi-delete-btn')) return;
+
+        const rect = roiContainer.getBoundingClientRect();
+        startX = e.clientX - rect.left;
+        startY = e.clientY - rect.top;
+        isDrawing = true;
+
+        // Create temporary box
+        currentBox = document.createElement('div');
+        currentBox.className = 'roi-box';
+        currentBox.style.left = startX + 'px';
+        currentBox.style.top = startY + 'px';
+        currentBox.style.width = '0px';
+        currentBox.style.height = '0px';
+        roiContainer.appendChild(currentBox);
+    });
+
+    roiContainer.addEventListener('mousemove', (e) => {
+        if (!isDrawing) return;
+        const rect = roiContainer.getBoundingClientRect();
+        const currentX = e.clientX - rect.left;
+        const currentY = e.clientY - rect.top;
+
+        const width = Math.abs(currentX - startX);
+        const height = Math.abs(currentY - startY);
+        const left = Math.min(currentX, startX);
+        const top = Math.min(currentY, startY);
+
+        currentBox.style.width = width + 'px';
+        currentBox.style.height = height + 'px';
+        currentBox.style.left = left + 'px';
+        currentBox.style.top = top + 'px';
+    });
+
+    roiContainer.addEventListener('mouseup', () => {
+        if (!isDrawing) return;
+        isDrawing = false;
+
+        // Finalize box if it has size
+        if (parseInt(currentBox.style.width) > 10 && parseInt(currentBox.style.height) > 10) {
+            addROI(currentBox.style.left, currentBox.style.top, currentBox.style.width, currentBox.style.height);
+        }
+
+        // Remove the temporary drawing element, we will re-render from state
+        if(currentBox) {
+            currentBox.remove();
+            currentBox = null;
+        }
+    });
+
+    function addROI(left, top, width, height) {
+        const id = Date.now();
+        rois.push({ id, left, top, width, height });
+        renderROIs();
+    }
+
+    function removeROI(id) {
+        rois = rois.filter(r => r.id !== id);
+        renderROIs();
+    }
+
+    function renderROIs() {
+        // Clear container (keep background)
+        roiContainer.innerHTML = '';
+        const listContainer = document.getElementById('roi-list');
+        listContainer.innerHTML = '';
+
+        rois.forEach((roi, index) => {
+            // Draw box on image
+            const box = document.createElement('div');
+            box.className = 'roi-box';
+            box.style.left = roi.left;
+            box.style.top = roi.top;
+            box.style.width = roi.width;
+            box.style.height = roi.height;
+
+            // Delete button on box
+            const delBtn = document.createElement('div');
+            delBtn.className = 'roi-delete-btn';
+            delBtn.innerText = '×';
+            delBtn.onclick = (e) => { e.stopPropagation(); removeROI(roi.id); };
+            box.appendChild(delBtn);
+
+            roiContainer.appendChild(box);
+
+            // Add to list
+            const item = document.createElement('div');
+            item.className = 'roi-item';
+            item.innerHTML = `
+                <span>ROI区域 ${index + 1}</span>
+                <button class="btn-delete" onclick="removeROI(${roi.id})">删除</button>
+            `;
+            listContainer.appendChild(item);
+        });
+    }
+
+    // Navigation Logic
+    function showView(viewId) {
+        // Hide all views
+        document.querySelectorAll('.view').forEach(view => {
+            view.classList.remove('active');
+        });
+        // Show target view
+        document.getElementById(viewId).classList.add('active');
+
+        // Reset selections if necessary
+        if(viewId === 'plan-d') {
+            document.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+        }
+        if(viewId === 'plan-c') {
+             // Reset Plan C selections
+             document.querySelectorAll('#plan-c .option-card').forEach(c => c.classList.remove('selected'));
+             document.getElementById('ppvd-dataset-btn').innerText = '开始数据采集 (全量)';
+        }
+
+        // Render categories if showing dataset view
+        if(viewId === 'dataset-view') {
+            renderCategories();
+        }
+
+        // Initialize ROI if Plan A
+        if(viewId === 'plan-a') {
+            planAImages = [];
+            renderROIs();
+            renderPlanAImages();
+            const input = document.getElementById('plana-label-input');
+            if(input) input.value = '';
+        }
+    }
+
+    function selectOption(element) {
+        element.parentElement.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+        element.classList.add('selected');
+    }
+
+    function startTraining(planName) {
+        currentPlan = planName;
+
+        if (planName === 'PLAN D') {
+            const selected = document.querySelector('#plan-d .option-card.selected');
+            if (!selected) {
+                alert("请先选择一种模型类型！");
+                return;
+            }
+            // For Plan D (both Detection and Classification), go to Dataset View
+            document.getElementById('dataset-title').innerText = "数据采集 (" + selected.firstElementChild.innerText + ")";
+            categories = [
+                { id: 1, name: "类别 1", images: [] },
+                { id: 2, name: "类别 2", images: [] }
+            ];
+            showView('dataset-view');
+        } else if (planName === 'PLAN B') {
+            document.getElementById('dataset-title').innerText = "数据采集 (Clip 分类)";
+            categories = [
+                { id: 1, name: "有工牌", images: [] },
+                { id: 2, name: "无工牌", images: [] }
+            ];
+            showView('dataset-view');
+        } else if (planName === 'PLAN C') {
+            // PPVD Logic: Use selected category or defaults
+            const selected = document.querySelector('#plan-c .option-card.selected');
+            document.getElementById('dataset-title').innerText = "数据采集 (PPVD 增强)";
+
+            if (selected) {
+                 // Clean up the text to get just the name (e.g. "人 (Person)")
+                 const catName = selected.firstElementChild.innerText;
+                 categories = [
+                     { id: 1, name: catName, images: [] }
+                 ];
+            } else {
+                 // Default all if nothing selected (though UI encourages selection)
+                 categories = [
+                    { id: 1, name: "人 (Person)", images: [] },
+                    { id: 2, name: "车 (Vehicle)", images: [] },
+                    { id: 3, name: "动物 (Animal)", images: [] },
+                    { id: 4, name: "包裹 (Package)", images: [] }
+                ];
+            }
+            showView('dataset-view');
+        } else {
+            // Plan A handles its own flow within the view
+            alert(`正在启动 ${planName} 训练流程...`);
+        }
+    }
+
+    function goBackFromDataset() {
+        if(currentPlan === 'PLAN D') {
+            showView('plan-d');
+        } else if (currentPlan === 'PLAN B') {
+            showView('plan-b');
+        } else if (currentPlan === 'PLAN C') {
+            showView('plan-c');
+        } else {
+            showView('home-view');
+        }
+    }
+
+    // Dataset Management Functions
+    function renderCategories() {
+        const container = document.getElementById('category-list');
+        container.innerHTML = '';
+
+        categories.forEach((cat, index) => {
+            const card = document.createElement('div');
+            card.className = 'category-card';
+
+            let imagesHtml = '';
+            // Check if we are in a Detection plan (Plan D - YOLO) to show "Label" option
+            // A simple heuristic: check if current plan is D and title says "检测" (Detection)
+            const isDetection = currentPlan === 'PLAN D' && document.getElementById('dataset-title').innerText.includes("检测");
+
+            cat.images.forEach(img => {
+                imagesHtml += `
+                    <div class="image-thumb" style="flex-direction: column;">
+                        <div>IMG</div>
+                        ${isDetection ? '<div style="font-size:8px; background:#007bff; color:white; padding:2px; border-radius:2px; margin-top:2px;">标注</div>' : ''}
+                    </div>`;
+            });
+
+            card.innerHTML = `
+                <div class="category-header">
+                    <input type="text" class="category-input" id="cat-input-${cat.id}" onchange="updateCategoryName(${cat.id}, this.value)">
+                    <button class="btn-delete" onclick="removeCategory(${cat.id})">删除</button>
+                </div>
+                <div class="image-grid">
+                    ${imagesHtml}
+                    <button class="add-image-btn" onclick="addImage(${cat.id})">+</button>
+                </div>
+                <div style="font-size: 12px; color: #999; margin-top: 8px;">${cat.images.length} 张图片</div>
+            `;
+            container.appendChild(card);
+            // Set value safely to avoid XSS
+            document.getElementById(`cat-input-${cat.id}`).value = cat.name;
+        });
+    }
+
+    function addCategory() {
+        const newId = categories.length > 0 ? Math.max(...categories.map(c => c.id)) + 1 : 1;
+        categories.push({ id: newId, name: `新类别 ${categories.length + 1}`, images: [] });
+        renderCategories();
+    }
+
+    function removeCategory(id) {
+        if(confirm('确定要删除这个分类吗？')) {
+            categories = categories.filter(c => c.id !== id);
+            renderCategories();
+        }
+    }
+
+    function updateCategoryName(id, newName) {
+        const cat = categories.find(c => c.id === id);
+        if(cat) cat.name = newName;
+    }
+
+    function addImage(catId) {
+        const cat = categories.find(c => c.id === catId);
+        if(cat) {
+            cat.images.push('placeholder.jpg');
+            renderCategories();
+        }
+    }
+
+    function takeSnapshot() {
+        const input = document.getElementById('plana-label-input');
+        const label = input.value.trim();
+
+        if (!label) {
+            alert("请先输入分类标签！");
+            return;
+        }
+
+        if (rois.length === 0) {
+            alert("请先绘制 ROI 区域！");
+            return;
+        }
+
+        planAImages.push({
+            id: Date.now(),
+            label: label,
+            src: 'placeholder.jpg'
+        });
+
+        renderPlanAImages();
+    }
+
+    function removePlanAImage(id) {
+        planAImages = planAImages.filter(img => img.id !== id);
+        renderPlanAImages();
+    }
+
+    function renderPlanAImages() {
+        const container = document.getElementById('plana-images-list');
+        if(!container) return;
+
+        container.innerHTML = '';
+
+        planAImages.forEach(img => {
+            const div = document.createElement('div');
+            div.className = 'image-thumb';
+            div.style.position = 'relative';
+            div.style.flexDirection = 'column';
+
+            const labelDiv = document.createElement('div');
+            labelDiv.style.cssText = "font-weight:bold; margin-bottom:4px; font-size:10px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; width:100%; text-align:center;";
+            labelDiv.textContent = img.label;
+
+            const imgDiv = document.createElement('div');
+            imgDiv.textContent = "IMG";
+
+            div.appendChild(labelDiv);
+            div.appendChild(imgDiv);
+
+            // Delete button
+            const delBtn = document.createElement('div');
+            delBtn.onclick = (e) => { e.stopPropagation(); removePlanAImage(img.id); };
+            delBtn.style.position = 'absolute';
+            delBtn.style.top = '0';
+            delBtn.style.right = '0';
+            delBtn.style.background = 'rgba(220,53,69,0.8)';
+            delBtn.style.color = 'white';
+            delBtn.style.width = '20px';
+            delBtn.style.height = '20px';
+            delBtn.style.display = 'flex';
+            delBtn.style.alignItems = 'center';
+            delBtn.style.justifyContent = 'center';
+            delBtn.style.cursor = 'pointer';
+            delBtn.style.fontSize = '14px';
+            delBtn.innerText = '×';
+
+            div.appendChild(delBtn);
+            container.appendChild(div);
+        });
+    }
+
+    function finishTraining() {
+        const planAView = document.getElementById('plan-a');
+        if (planAView && planAView.classList.contains('active')) {
+             if (rois.length === 0) {
+                 alert("请先绘制 ROI 区域！");
+                 return;
+             }
+             alert(`[PLAN A] 开始训练! \nROI数量: ${rois.length}\n采集样本: ${planAImages.length}`);
+             return;
+        }
+
+        if(currentPlan) {
+            alert(`[${currentPlan}] 开始根据采集的数据进行训练...`);
+        } else {
+            alert("开始训练...");
+        }
+    }
+</script>
+
+</body>
+</html>

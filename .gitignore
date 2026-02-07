@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+xueqiu_cookies.json
+.DS_Store

@@ -244,6 +244,18 @@
             font-size: 24px;
             color: #ccc;
             cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .add-image-btn input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
         }
 
         .add-category-btn {
@@ -338,6 +350,68 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
+        /* Training Overlay */
+        #training-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.95);
+            z-index: 2000;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        #training-overlay.active {
+            display: flex;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            max-width: 400px;
+            height: 20px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: var(--primary-color);
+            transition: width 0.1s linear;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        #training-success {
+            display: none;
+            color: #28a745;
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
@@ -424,8 +498,9 @@
 
             <div class="form-group">
                 <label class="form-label">参考图片 (可选)</label>
-                <div class="placeholder-box" style="height: 100px;">
-                    点击上传参考图
+                <div class="placeholder-box" id="planb-upload-box" style="height: 100px; position: relative; overflow: hidden; background-size: cover; background-position: center;">
+                    <span id="planb-upload-text">点击上传参考图</span>
+                    <input type="file" accept="image/*" style="position: absolute; top:0; left:0; width:100%; height:100%; opacity:0; cursor:pointer;" onchange="uploadPlanBImage(this)">
                 </div>
             </div>
 
@@ -484,6 +559,22 @@
     </div>
 
     <!-- Dataset Management View (Generic) -->
+    <!-- Training Overlay -->
+    <div id="training-overlay">
+        <div class="spinner" id="training-spinner"></div>
+        <div id="training-success">✓</div>
+        <h2 id="training-title" style="margin-bottom: 10px;">模型训练中...</h2>
+        <p id="training-desc" style="color: #666; margin-bottom: 20px;">正在提取特征并优化模型参数</p>
+
+        <div class="progress-bar-container" id="training-progress-container">
+            <div class="progress-bar" id="training-progress-bar"></div>
+        </div>
+        <div id="training-percent" style="font-weight: bold; margin-bottom: 30px;">0%</div>
+
+        <button class="btn-primary" id="training-done-btn" style="display: none; max-width: 300px;" onclick="closeTrainingOverlay()">完成</button>
+    </div>
+
+    <!-- Dataset Management View (Generic) -->
     <div id="dataset-view" class="view">
         <div class="header">
             <button class="back-btn" onclick="goBackFromDataset()">←</button>
@@ -512,6 +603,35 @@
     let rois = [];
     let planAImages = [];
     let currentPlan = '';
+
+    // Load state from local storage
+    function loadState() {
+        try {
+            const storedCategories = localStorage.getItem('aibox_categories');
+            const storedRois = localStorage.getItem('aibox_rois');
+            const storedPlanAImages = localStorage.getItem('aibox_plana_images');
+
+            if (storedCategories) categories = JSON.parse(storedCategories);
+            if (storedRois) rois = JSON.parse(storedRois);
+            if (storedPlanAImages) planAImages = JSON.parse(storedPlanAImages);
+        } catch (e) {
+            console.error("Error loading state from localStorage", e);
+        }
+    }
+
+    // Save state to local storage
+    function saveState() {
+        try {
+            localStorage.setItem('aibox_categories', JSON.stringify(categories));
+            localStorage.setItem('aibox_rois', JSON.stringify(rois));
+            localStorage.setItem('aibox_plana_images', JSON.stringify(planAImages));
+        } catch (e) {
+            console.error("Error saving state to localStorage (possibly quota exceeded)", e);
+        }
+    }
+
+    // Call loadState initially
+    loadState();
 
     // ROI Drawing State
     let isDrawing = false;
@@ -575,11 +695,13 @@
     function addROI(left, top, width, height) {
         const id = Date.now();
         rois.push({ id, left, top, width, height });
+        saveState();
         renderROIs();
     }
 
     function removeROI(id) {
         rois = rois.filter(r => r.id !== id);
+        saveState();
         renderROIs();
     }
 
@@ -607,13 +729,20 @@
 
             roiContainer.appendChild(box);
 
-            // Add to list
+            // Add to list safely
             const item = document.createElement('div');
             item.className = 'roi-item';
-            item.innerHTML = `
-                <span>ROI区域 ${index + 1}</span>
-                <button class="btn-delete" onclick="removeROI(${roi.id})">删除</button>
-            `;
+
+            const spanEl = document.createElement('span');
+            spanEl.textContent = `ROI区域 ${index + 1}`;
+
+            const btnEl = document.createElement('button');
+            btnEl.className = 'btn-delete';
+            btnEl.textContent = '删除';
+            btnEl.onclick = () => removeROI(roi.id);
+
+            item.appendChild(spanEl);
+            item.appendChild(btnEl);
             listContainer.appendChild(item);
         });
     }
@@ -685,20 +814,28 @@
             const selected = document.querySelector('#plan-c .option-card.selected');
             document.getElementById('dataset-title').innerText = "数据采集 (PPVD 增强)";
 
+            const baseCategories = [
+                { id: 1, name: "人 (Person)", images: [] },
+                { id: 2, name: "车 (Vehicle)", images: [] },
+                { id: 3, name: "动物 (Animal)", images: [] },
+                { id: 4, name: "包裹 (Package)", images: [] }
+            ];
+
             if (selected) {
                  // Clean up the text to get just the name (e.g. "人 (Person)")
                  const catName = selected.firstElementChild.innerText;
-                 categories = [
-                     { id: 1, name: catName, images: [] }
-                 ];
+
+                 // Make the selected one the primary active category, but keep others visible
+                 const targetCat = baseCategories.find(c => c.name === catName);
+                 const others = baseCategories.filter(c => c.name !== catName);
+
+                 // Mark the selected one with a special flag so we can highlight it
+                 targetCat.highlighted = true;
+
+                 categories = [targetCat, ...others];
             } else {
-                 // Default all if nothing selected (though UI encourages selection)
-                 categories = [
-                    { id: 1, name: "人 (Person)", images: [] },
-                    { id: 2, name: "车 (Vehicle)", images: [] },
-                    { id: 3, name: "动物 (Animal)", images: [] },
-                    { id: 4, name: "包裹 (Package)", images: [] }
-                ];
+                 // Default all if nothing selected
+                 categories = baseCategories;
             }
             showView('dataset-view');
         } else {
@@ -728,16 +865,28 @@
             const card = document.createElement('div');
             card.className = 'category-card';
 
-            let imagesHtml = '';
+            if (cat.highlighted) {
+                card.style.border = '2px solid var(--primary-color)';
+                card.style.boxShadow = '0 0 10px rgba(0, 123, 255, 0.2)';
+            }
+
             // Check if we are in a Detection plan (Plan D - YOLO) to show "Label" option
-            // A simple heuristic: check if current plan is D and title says "检测" (Detection)
             const isDetection = currentPlan === 'PLAN D' && document.getElementById('dataset-title').innerText.includes("检测");
 
-            cat.images.forEach(img => {
+            let imagesHtml = '';
+            cat.images.forEach((img, imgIndex) => {
+                // Determine source for image tag
+                const imgSrc = (img.startsWith('data:image/') || img.startsWith('http')) ? img : '';
+                const imgContent = imgSrc ? `<img src="${imgSrc}" style="width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 1;">` : '<div>IMG</div>';
+
                 imagesHtml += `
-                    <div class="image-thumb" style="flex-direction: column;">
-                        <div>IMG</div>
-                        ${isDetection ? '<div style="font-size:8px; background:#007bff; color:white; padding:2px; border-radius:2px; margin-top:2px;">标注</div>' : ''}
+                    <div class="image-thumb" style="flex-direction: column; position: relative;">
+                        ${imgContent}
+                        <div style="z-index: 2; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; pointer-events: none;">
+                            ${imgSrc ? '' : '<div>IMG</div>'}
+                            ${isDetection ? '<div style="font-size:8px; background:#007bff; color:white; padding:2px; border-radius:2px; margin-top:2px;">标注</div>' : ''}
+                        </div>
+                        <div class="btn-delete" style="position: absolute; top: 0; right: 0; width: 20px; height: 20px; background: rgba(220,53,69,0.8); color: white; display: flex; align-items: center; justify-content: center; z-index: 3; border: none; font-size: 14px; cursor: pointer;" onclick="removeImage(${cat.id}, ${imgIndex})">×</div>
                     </div>`;
             });
 
@@ -748,7 +897,10 @@
                 </div>
                 <div class="image-grid">
                     ${imagesHtml}
-                    <button class="add-image-btn" onclick="addImage(${cat.id})">+</button>
+                    <div class="add-image-btn">
+                        +
+                        <input type="file" accept="image/*" onchange="uploadDatasetImage(this, ${cat.id})" multiple>
+                    </div>
                 </div>
                 <div style="font-size: 12px; color: #999; margin-top: 8px;">${cat.images.length} 张图片</div>
             `;
@@ -761,27 +913,67 @@
     function addCategory() {
         const newId = categories.length > 0 ? Math.max(...categories.map(c => c.id)) + 1 : 1;
         categories.push({ id: newId, name: `新类别 ${categories.length + 1}`, images: [] });
+        saveState();
         renderCategories();
     }
 
     function removeCategory(id) {
         if(confirm('确定要删除这个分类吗？')) {
             categories = categories.filter(c => c.id !== id);
+            saveState();
             renderCategories();
         }
     }
 
     function updateCategoryName(id, newName) {
         const cat = categories.find(c => c.id === id);
-        if(cat) cat.name = newName;
+        if(cat) {
+            cat.name = newName;
+            saveState();
+        }
     }
 
-    function addImage(catId) {
+    function uploadDatasetImage(input, catId) {
+        if (!input.files || input.files.length === 0) return;
         const cat = categories.find(c => c.id === catId);
-        if(cat) {
-            cat.images.push('placeholder.jpg');
+        if (!cat) return;
+
+        // Process each file
+        Array.from(input.files).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                cat.images.push(e.target.result);
+                saveState();
+                renderCategories();
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // Reset input to allow uploading the same file again
+        input.value = '';
+    }
+
+
+    function removeImage(catId, imgIndex) {
+        const cat = categories.find(c => c.id === catId);
+        if (cat) {
+            cat.images.splice(imgIndex, 1);
+            saveState();
             renderCategories();
         }
+    }
+
+    function uploadPlanBImage(input) {
+        if (!input.files || !input.files[0]) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const box = document.getElementById('planb-upload-box');
+            const text = document.getElementById('planb-upload-text');
+            box.style.backgroundImage = `url(${e.target.result})`;
+            box.style.borderStyle = 'solid';
+            text.style.display = 'none';
+        };
+        reader.readAsDataURL(input.files[0]);
     }
 
     function takeSnapshot() {
@@ -798,17 +990,38 @@
             return;
         }
 
+        // Generate a simulated SVG snapshot incorporating the ROIs drawn
+        let roiSvg = '';
+        rois.forEach(r => {
+            // Convert px values back to numbers
+            const l = parseInt(r.left);
+            const t = parseInt(r.top);
+            const w = parseInt(r.width);
+            const h = parseInt(r.height);
+            // Assuming roi container is 100% width, ~448px, height 250px.
+            // We'll approximate viewBox coordinates for the SVG
+            const x = (l / 448) * 100;
+            const y = (t / 250) * 100;
+            const vw = (w / 448) * 100;
+            const vh = (h / 250) * 100;
+            roiSvg += `<rect x="${x}" y="${y}" width="${vw}" height="${vh}" fill="none" stroke="red" stroke-width="2"/>`;
+        });
+
+        const bgSvg = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect fill="%23ddd" width="100" height="100"/><text x="50" y="50" font-family="Arial" font-size="12" text-anchor="middle" fill="%23999">Camera</text>${roiSvg}</svg>`;
+
         planAImages.push({
             id: Date.now(),
             label: label,
-            src: 'placeholder.jpg'
+            src: bgSvg
         });
 
+        saveState();
         renderPlanAImages();
     }
 
     function removePlanAImage(id) {
         planAImages = planAImages.filter(img => img.id !== id);
+        saveState();
         renderPlanAImages();
     }
 
@@ -823,16 +1036,37 @@
             div.className = 'image-thumb';
             div.style.position = 'relative';
             div.style.flexDirection = 'column';
+            div.style.overflow = 'hidden';
+
+            // Background Image
+            const bgImg = document.createElement('img');
+            bgImg.src = img.src;
+            bgImg.style.position = 'absolute';
+            bgImg.style.top = '0';
+            bgImg.style.left = '0';
+            bgImg.style.width = '100%';
+            bgImg.style.height = '100%';
+            bgImg.style.objectFit = 'cover';
+            bgImg.style.zIndex = '1';
+
+            // Label Container
+            const labelContainer = document.createElement('div');
+            labelContainer.style.position = 'absolute';
+            labelContainer.style.bottom = '0';
+            labelContainer.style.left = '0';
+            labelContainer.style.width = '100%';
+            labelContainer.style.background = 'rgba(0,0,0,0.6)';
+            labelContainer.style.color = 'white';
+            labelContainer.style.zIndex = '2';
+            labelContainer.style.padding = '2px 0';
 
             const labelDiv = document.createElement('div');
-            labelDiv.style.cssText = "font-weight:bold; margin-bottom:4px; font-size:10px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; width:100%; text-align:center;";
+            labelDiv.style.cssText = "font-weight:bold; font-size:10px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; width:100%; text-align:center;";
             labelDiv.textContent = img.label;
 
-            const imgDiv = document.createElement('div');
-            imgDiv.textContent = "IMG";
-
-            div.appendChild(labelDiv);
-            div.appendChild(imgDiv);
+            labelContainer.appendChild(labelDiv);
+            div.appendChild(bgImg);
+            div.appendChild(labelContainer);
 
             // Delete button
             const delBtn = document.createElement('div');
@@ -857,21 +1091,85 @@
     }
 
     function finishTraining() {
+        let title = "模型训练中...";
+        let desc = "正在处理数据并优化模型参数";
+
         const planAView = document.getElementById('plan-a');
         if (planAView && planAView.classList.contains('active')) {
              if (rois.length === 0) {
                  alert("请先绘制 ROI 区域！");
                  return;
              }
-             alert(`[PLAN A] 开始训练! \nROI数量: ${rois.length}\n采集样本: ${planAImages.length}`);
-             return;
+             if (planAImages.length === 0) {
+                 alert("请至少采集一张样本图片！");
+                 return;
+             }
+             title = "PLAN A 训练中...";
+             desc = `ROI数量: ${rois.length} | 采集样本: ${planAImages.length}`;
+        } else if(currentPlan) {
+             title = `${currentPlan} 训练中...`;
+
+             let totalImages = 0;
+             categories.forEach(c => totalImages += c.images.length);
+             desc = `共 ${categories.length} 个分类 | ${totalImages} 张图片`;
         }
 
-        if(currentPlan) {
-            alert(`[${currentPlan}] 开始根据采集的数据进行训练...`);
-        } else {
-            alert("开始训练...");
-        }
+        simulateTraining(title, desc);
+    }
+
+    function simulateTraining(title, desc) {
+        const overlay = document.getElementById('training-overlay');
+        const spinner = document.getElementById('training-spinner');
+        const successIcon = document.getElementById('training-success');
+        const titleEl = document.getElementById('training-title');
+        const descEl = document.getElementById('training-desc');
+        const progressContainer = document.getElementById('training-progress-container');
+        const progressBar = document.getElementById('training-progress-bar');
+        const percentEl = document.getElementById('training-percent');
+        const doneBtn = document.getElementById('training-done-btn');
+
+        // Reset state
+        spinner.style.display = 'block';
+        successIcon.style.display = 'none';
+        progressContainer.style.display = 'block';
+        percentEl.style.display = 'block';
+        doneBtn.style.display = 'none';
+        progressBar.style.width = '0%';
+        percentEl.innerText = '0%';
+        titleEl.innerText = title;
+        descEl.innerText = desc;
+
+        overlay.classList.add('active');
+
+        let progress = 0;
+        const totalTime = 3000; // 3 seconds simulation
+        const intervalTime = 50;
+        const step = (100 / (totalTime / intervalTime));
+
+        const interval = setInterval(() => {
+            progress += step;
+            if (progress >= 100) {
+                progress = 100;
+                clearInterval(interval);
+
+                // Show completion state
+                spinner.style.display = 'none';
+                successIcon.style.display = 'block';
+                progressContainer.style.display = 'none';
+                percentEl.style.display = 'none';
+                titleEl.innerText = "训练完成！";
+                descEl.innerText = "模型已成功部署到设备。";
+                doneBtn.style.display = 'block';
+            }
+
+            progressBar.style.width = progress + '%';
+            percentEl.innerText = Math.round(progress) + '%';
+        }, intervalTime);
+    }
+
+    function closeTrainingOverlay() {
+        document.getElementById('training-overlay').classList.remove('active');
+        showView('home-view');
     }
 </script>
 

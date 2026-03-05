@@ -29,11 +29,25 @@
     <!-- Main Content Area -->
     <div class="flex-1 flex flex-row w-full h-full overflow-hidden">
 
-        <!-- Left Sidebar: Device Manager -->
-        <div id="device-manager" class="w-64 bg-[#252525] border-r border-[#333] flex flex-col">
-            <div class="p-4 border-b border-[#333] font-bold text-lg text-brand">Device Manager</div>
-            <div class="flex-1 overflow-y-auto p-2" id="device-list">
-                <!-- Devices rendered via JS -->
+        <!-- Left Sidebar: Device Manager & Dataset Collection -->
+        <div id="left-sidebar" class="w-64 bg-[#252525] border-r border-[#333] flex flex-col">
+            <!-- Top Half: Device Manager -->
+            <div id="device-manager" class="flex-1 flex flex-col overflow-hidden">
+                <div class="p-4 border-b border-[#333] font-bold text-lg text-brand shrink-0">Device Manager</div>
+                <div class="flex-1 overflow-y-auto p-2" id="device-list">
+                    <!-- Devices rendered via JS -->
+                </div>
+            </div>
+
+            <!-- Bottom Half: Dataset Collection -->
+            <div class="flex-1 flex flex-col border-t border-[#333] bg-[#1e1e1e] overflow-hidden">
+                <div class="px-4 py-3 border-b border-[#333] flex flex-col shrink-0 gap-1">
+                    <span class="font-bold text-sm text-gray-300">Dataset Collection</span>
+                    <span class="text-[10px] text-gray-500">Auto-extracting frames...</span>
+                </div>
+                <div class="flex-1 overflow-y-auto p-2 flex flex-col gap-2" id="dataset-collection-panel">
+                    <!-- Category cards will be injected here via JS -->
+                </div>
             </div>
         </div>
 
@@ -64,17 +78,6 @@
             <!-- Quick Tagging Action Bar -->
             <div class="h-16 bg-[#252525] border-t border-[#333] px-6 py-2 flex items-center justify-center gap-4" id="quick-tagging-bar">
                 <!-- Action buttons will be injected here via JS -->
-            </div>
-
-            <!-- Dataset Collection Panel (Bottom of Middle Area) -->
-            <div class="h-28 bg-[#1e1e1e] border-t border-[#333] p-4 flex flex-col justify-start">
-                <div class="text-xs text-gray-400 mb-2 flex justify-between items-center">
-                    <span>Dataset Collection (Frames per Category)</span>
-                    <span class="text-[10px] text-gray-500">Auto-extracting frames...</span>
-                </div>
-                <div class="flex gap-4 overflow-x-auto pb-2" id="dataset-collection-panel">
-                    <!-- Category cards will be injected here via JS -->
-                </div>
             </div>
         </div>
 
@@ -275,16 +278,16 @@
             } else {
                 categories.forEach(cat => {
                     const card = document.createElement('div');
-                    card.className = 'flex flex-col bg-[#1a1a1a] border border-[#333] rounded p-2 min-w-[120px] shrink-0 relative group';
+                    card.className = 'flex flex-col bg-[#1a1a1a] border border-[#333] rounded p-3 relative group w-full shrink-0';
 
                     card.innerHTML = `
-                        <button class="absolute top-1 right-1 text-gray-500 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1 leading-none text-xs" title="Delete Category">✕</button>
+                        <button class="absolute top-2 right-2 text-gray-500 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1 leading-none text-xs" title="Delete Category">✕</button>
                         <div class="flex items-center gap-2 mb-2 w-full pr-4">
                             <div class="w-3 h-3 rounded-full shrink-0" style="background-color: ${cat.color}"></div>
                             <input type="text" class="text-sm font-semibold truncate text-gray-200 bg-transparent border-none outline-none focus:bg-[#333] focus:px-1 rounded w-full transition-colors" value="${cat.name}" title="Click to edit" spellcheck="false" />
                         </div>
-                        <div class="text-xs text-gray-400">
-                            Frames: <span class="font-mono text-white ml-1">${cat.count}</span>
+                        <div class="text-xs text-gray-400 flex items-center">
+                            Frames: <span class="font-mono text-white ml-2 text-sm">${cat.count}</span>
                         </div>
                     `;
 
@@ -339,8 +342,8 @@
 
             // Add Category Button
             const addBtn = document.createElement('button');
-            addBtn.className = 'flex flex-col items-center justify-center bg-[#252525] border border-dashed border-[#555] hover:border-[#00A9E0] hover:text-[#00A9E0] rounded p-2 min-w-[60px] h-[64px] shrink-0 text-gray-400 transition-colors';
-            addBtn.innerHTML = `<span class="text-xl leading-none">+</span><span class="text-[10px] mt-1">Add</span>`;
+            addBtn.className = 'flex items-center justify-center bg-[#252525] border border-dashed border-[#555] hover:border-[#00A9E0] hover:text-[#00A9E0] rounded p-3 w-full shrink-0 text-gray-400 transition-colors gap-2';
+            addBtn.innerHTML = `<span class="text-lg leading-none">+</span><span class="text-sm">Add Category</span>`;
             addBtn.onclick = () => {
                 // Ensure we don't try to auto-label any box when adding from the panel
                 activeBoxIndex = -1;

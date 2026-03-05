@@ -46,23 +46,26 @@
 
             <!-- Video Pane -->
             <div class="flex-1 relative bg-black flex items-center justify-center m-4 rounded-lg overflow-hidden border border-[#333]">
-                <!-- Video Placeholder -->
-                <div class="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none">
+                <!-- Video Image (Simulated Camera Feed) -->
+                <img src="https://images.unsplash.com/photo-1518770660439-4636190af475?ixlib=rb-4.0.3&auto=format&fit=crop&w=1280&q=80" alt="Camera Feed" class="absolute inset-0 w-full h-full object-cover opacity-80 pointer-events-none" id="camera-feed-img">
+
+                <!-- Video Placeholder (Hidden by default, shown if no device selected) -->
+                <div class="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none hidden" id="video-placeholder-svg">
                     <svg class="w-24 h-24 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                 </div>
+
                 <!-- Canvas for drawing -->
                 <canvas id="annotation-canvas" class="absolute inset-0 cursor-crosshair w-full h-full"></canvas>
             </div>
 
-            <!-- Timeline (Bottom of Middle Area) -->
-            <div class="h-24 bg-[#252525] border-t border-[#333] p-4 flex flex-col justify-center">
-                <div class="text-xs text-gray-400 mb-2">Timeline (Extract Frames)</div>
-                <div class="w-full h-8 bg-[#1a1a1a] rounded-md relative flex items-center">
-                    <!-- Timeline simulation -->
-                    <div class="absolute left-1/4 h-full w-2 bg-brand bg-opacity-50"></div>
-                    <div class="absolute left-1/2 h-full w-2 bg-brand bg-opacity-50"></div>
-                    <div class="absolute left-3/4 h-full w-2 bg-brand bg-opacity-50"></div>
-                    <div class="h-full w-1 bg-white absolute left-1/3 cursor-ew-resize"></div>
+            <!-- Dataset Collection Panel (Bottom of Middle Area) -->
+            <div class="h-28 bg-[#252525] border-t border-[#333] p-4 flex flex-col justify-start">
+                <div class="text-xs text-gray-400 mb-2 flex justify-between items-center">
+                    <span>Dataset Collection (Frames per Category)</span>
+                    <span class="text-[10px] text-gray-500">Auto-extracting frames...</span>
+                </div>
+                <div class="flex gap-4 overflow-x-auto pb-2" id="dataset-collection-panel">
+                    <!-- Category cards will be injected here via JS -->
                 </div>
             </div>
         </div>
@@ -122,15 +125,30 @@
     </div>
 
     <!-- Right-click Context Menu -->
-    <div id="context-menu" class="hidden absolute z-50 bg-[#2a2a2a] border border-[#444] rounded shadow-lg py-1 text-sm text-gray-200">
-        <div class="px-4 py-2 hover:bg-brand hover:text-white cursor-pointer" onclick="setLabel('Full')">Full</div>
-        <div class="px-4 py-2 hover:bg-brand hover:text-white cursor-pointer" onclick="setLabel('Empty')">Empty</div>
-        <div class="px-4 py-2 hover:bg-brand hover:text-white cursor-pointer" onclick="setLabel('My Car')">My Car</div>
+    <div id="context-menu" class="hidden absolute z-50 bg-[#2a2a2a] border border-[#444] rounded shadow-lg py-1 text-sm text-gray-200 min-w-[120px]">
+        <div id="context-menu-items">
+            <!-- Dynamic items injected here -->
+        </div>
+        <div class="border-t border-[#444] mt-1 pt-1">
+            <div class="px-4 py-2 hover:bg-[#333] hover:text-white cursor-pointer text-brand" onclick="openNewCategoryModal()">➕ New Category...</div>
+        </div>
     </div>
 
     <!-- Small Box Toast Warning -->
     <div id="toast-warning" class="hidden fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-yellow-500 text-black px-6 py-3 rounded-md shadow-lg font-bold z-50 transition-opacity duration-300">
         Warning: Bounding box too small (under 32x32 pixels)!
+    </div>
+
+    <!-- New Category Modal -->
+    <div id="new-category-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[60]">
+        <div class="bg-[#252525] border border-[#444] rounded-lg p-6 w-80 shadow-2xl">
+            <h3 class="text-lg font-bold text-white mb-4">Create New Category</h3>
+            <input type="text" id="new-category-input" placeholder="e.g. Delivery Package" class="w-full bg-[#1a1a1a] border border-[#444] rounded px-3 py-2 text-white focus:outline-none focus:border-brand mb-4">
+            <div class="flex justify-end gap-3">
+                <button onclick="closeNewCategoryModal()" class="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">Cancel</button>
+                <button onclick="saveNewCategory()" class="px-4 py-2 text-sm bg-brand text-white rounded hover:bg-[#008CBA] transition-colors font-bold">Save</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -152,6 +170,14 @@
         const ctx = annotationCanvas.getContext('2d');
         const toastWarningEl = document.getElementById('toast-warning');
         const contextMenuEl = document.getElementById('context-menu');
+        const contextMenuItemsEl = document.getElementById('context-menu-items');
+        const cameraFeedImg = document.getElementById('camera-feed-img');
+        const videoPlaceholderSvg = document.getElementById('video-placeholder-svg');
+        const datasetCollectionPanel = document.getElementById('dataset-collection-panel');
+
+        // Modal Elements
+        const newCategoryModal = document.getElementById('new-category-modal');
+        const newCategoryInput = document.getElementById('new-category-input');
 
         // Monitoring Elements
         const cpuUsageEl = document.getElementById('cpu-usage');
@@ -176,6 +202,39 @@
         let currentX = 0;
         let currentY = 0;
         let activeBoxIndex = -1; // For context menu
+
+        // --- Category State ---
+        let categories = [
+            { name: 'Full', color: '#10B981', count: 0 },
+            { name: 'Empty', color: '#EF4444', count: 0 },
+            { name: 'My Car', color: '#3B82F6', count: 0 }
+        ];
+
+        // --- Dataset Collection Logic ---
+        function renderDatasetCollection() {
+            datasetCollectionPanel.innerHTML = '';
+
+            if (categories.length === 0) {
+                datasetCollectionPanel.innerHTML = '<span class="text-xs text-gray-500 italic">No categories created yet.</span>';
+                return;
+            }
+
+            categories.forEach(cat => {
+                const card = document.createElement('div');
+                card.className = 'flex flex-col bg-[#1a1a1a] border border-[#333] rounded p-2 min-w-[120px] shrink-0';
+
+                card.innerHTML = `
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="w-3 h-3 rounded-full" style="background-color: ${cat.color}"></div>
+                        <span class="text-sm font-semibold truncate text-gray-200" title="${cat.name}">${cat.name}</span>
+                    </div>
+                    <div class="text-xs text-gray-400">
+                        Frames: <span class="font-mono text-white ml-1">${cat.count}</span>
+                    </div>
+                `;
+                datasetCollectionPanel.appendChild(card);
+            });
+        }
 
         // --- Device Management Logic ---
         function renderDevices() {
@@ -214,6 +273,8 @@
 
             // Enable workspace
             annotationWorkspaceEl.classList.remove('opacity-50', 'pointer-events-none');
+            cameraFeedImg.classList.remove('hidden');
+            videoPlaceholderSvg.classList.add('hidden');
 
             renderDevices();
 
@@ -296,17 +357,24 @@
 
             // Draw all saved boxes
             boxes.forEach(box => {
-                ctx.strokeStyle = '#00A9E0';
+                let boxColor = '#00A9E0'; // default color
+
+                if (box.label) {
+                    const cat = categories.find(c => c.name === box.label);
+                    if (cat) boxColor = cat.color;
+                }
+
+                ctx.strokeStyle = boxColor;
                 ctx.lineWidth = 2;
                 ctx.strokeRect(box.x, box.y, box.width, box.height);
 
                 if (box.label) {
                     // Draw label background
-                    ctx.fillStyle = '#00A9E0';
+                    ctx.fillStyle = boxColor;
                     ctx.fillRect(box.x, box.y - 20, ctx.measureText(box.label).width + 10, 20);
                     // Draw label text
                     ctx.fillStyle = 'white';
-                    ctx.font = '12px Arial';
+                    ctx.font = 'bold 12px Arial';
                     ctx.fillText(box.label, box.x + 5, box.y - 6);
                 }
             });
@@ -339,6 +407,20 @@
         }
 
         // --- Context Menu Logic ---
+        function renderContextMenuItems() {
+            contextMenuItemsEl.innerHTML = '';
+            categories.forEach(cat => {
+                const item = document.createElement('div');
+                item.className = 'px-4 py-2 hover:bg-[#333] hover:text-white cursor-pointer flex items-center gap-2';
+                item.onclick = () => setLabel(cat.name);
+                item.innerHTML = `
+                    <div class="w-2 h-2 rounded-full" style="background-color: ${cat.color}"></div>
+                    ${cat.name}
+                `;
+                contextMenuItemsEl.appendChild(item);
+            });
+        }
+
         annotationCanvas.addEventListener('contextmenu', (e) => {
             e.preventDefault();
 
@@ -358,6 +440,7 @@
 
             if (clickedBoxIndex !== -1) {
                 activeBoxIndex = clickedBoxIndex;
+                renderContextMenuItems();
                 contextMenuEl.style.left = `${e.clientX}px`;
                 contextMenuEl.style.top = `${e.clientY}px`;
                 contextMenuEl.classList.remove('hidden');
@@ -380,11 +463,65 @@
 
         function setLabel(labelStr) {
             if (activeBoxIndex !== -1) {
-                boxes[activeBoxIndex].label = labelStr;
-                drawCanvas();
+                // Determine if modifying an existing label
+                const oldLabel = boxes[activeBoxIndex].label;
+
+                if (oldLabel !== labelStr) {
+                    boxes[activeBoxIndex].label = labelStr;
+                    drawCanvas();
+
+                    // Update counts
+                    const newCat = categories.find(c => c.name === labelStr);
+                    if (newCat) {
+                        // Simulate multiple frames being collected per box (e.g. 15 frames)
+                        newCat.count += 15;
+                    }
+
+                    if (oldLabel) {
+                        const oldCat = categories.find(c => c.name === oldLabel);
+                        if (oldCat && oldCat.count > 0) {
+                            oldCat.count -= 15;
+                        }
+                    }
+
+                    renderDatasetCollection();
+                }
             }
             hideContextMenu();
         }
+
+        // --- Custom Category Modal Logic ---
+        function openNewCategoryModal() {
+            hideContextMenu();
+            newCategoryInput.value = '';
+            newCategoryModal.classList.remove('hidden');
+            newCategoryInput.focus();
+        }
+
+        function closeNewCategoryModal() {
+            newCategoryModal.classList.add('hidden');
+        }
+
+        function saveNewCategory() {
+            const val = newCategoryInput.value.trim();
+            if (val) {
+                // Check if exists
+                if (!categories.find(c => c.name.toLowerCase() === val.toLowerCase())) {
+                    // Generate random bright color
+                    const randomColor = `hsl(${Math.random() * 360}, 70%, 50%)`;
+                    categories.push({ name: val, color: randomColor, count: 0 });
+                    renderDatasetCollection();
+                }
+
+                // Set the label immediately to the new category
+                setLabel(val);
+            }
+            closeNewCategoryModal();
+        }
+
+        newCategoryInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') saveNewCategory();
+        });
 
         // --- Performance Monitor Simulation ---
         function updatePerformanceStats() {
@@ -558,7 +695,11 @@
         function initApp() {
             // Disable workspace initially
             annotationWorkspaceEl.classList.add('opacity-50', 'pointer-events-none');
+            cameraFeedImg.classList.add('hidden');
+            videoPlaceholderSvg.classList.remove('hidden');
+
             renderDevices();
+            renderDatasetCollection();
             resizeCanvas();
         }
 

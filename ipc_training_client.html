@@ -216,24 +216,81 @@
 
             if (categories.length === 0) {
                 datasetCollectionPanel.innerHTML = '<span class="text-xs text-gray-500 italic">No categories created yet.</span>';
-                return;
+            } else {
+                categories.forEach(cat => {
+                    const card = document.createElement('div');
+                    card.className = 'flex flex-col bg-[#1a1a1a] border border-[#333] rounded p-2 min-w-[120px] shrink-0 relative group';
+
+                    card.innerHTML = `
+                        <button class="absolute top-1 right-1 text-gray-500 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1 leading-none text-xs" title="Delete Category">✕</button>
+                        <div class="flex items-center gap-2 mb-2 w-full pr-4">
+                            <div class="w-3 h-3 rounded-full shrink-0" style="background-color: ${cat.color}"></div>
+                            <input type="text" class="text-sm font-semibold truncate text-gray-200 bg-transparent border-none outline-none focus:bg-[#333] focus:px-1 rounded w-full transition-colors" value="${cat.name}" title="Click to edit" spellcheck="false" />
+                        </div>
+                        <div class="text-xs text-gray-400">
+                            Frames: <span class="font-mono text-white ml-1">${cat.count}</span>
+                        </div>
+                    `;
+
+                    // Handle Delete
+                    const deleteBtn = card.querySelector('button');
+                    deleteBtn.addEventListener('click', (e) => {
+                        e.stopPropagation(); // prevent other clicks
+                        if (confirm(`Are you sure you want to delete "${cat.name}"? This will remove all associated annotations.`)) {
+                            // Remove from categories array
+                            categories = categories.filter(c => c !== cat);
+
+                            // Remove from boxes
+                            boxes = boxes.filter(box => box.label !== cat.name);
+
+                            drawCanvas();
+                            renderDatasetCollection();
+                        }
+                    });
+
+                    // Handle Rename
+                    const inputEl = card.querySelector('input');
+                    inputEl.addEventListener('change', (e) => {
+                        const newName = e.target.value.trim();
+                        if (newName && newName !== cat.name) {
+                            // Check if name already exists
+                            if (categories.find(c => c.name.toLowerCase() === newName.toLowerCase() && c !== cat)) {
+                                alert('Category name already exists!');
+                                e.target.value = cat.name; // revert
+                                return;
+                            }
+
+                            const oldName = cat.name;
+                            cat.name = newName;
+
+                            // Update bounding boxes
+                            boxes.forEach(box => {
+                                if (box.label === oldName) {
+                                    box.label = newName;
+                                }
+                            });
+
+                            drawCanvas();
+                            renderDatasetCollection(); // re-render to update attributes
+                        } else {
+                            e.target.value = cat.name; // revert if empty
+                        }
+                    });
+
+                    datasetCollectionPanel.appendChild(card);
+                });
             }
 
-            categories.forEach(cat => {
-                const card = document.createElement('div');
-                card.className = 'flex flex-col bg-[#1a1a1a] border border-[#333] rounded p-2 min-w-[120px] shrink-0';
-
-                card.innerHTML = `
-                    <div class="flex items-center gap-2 mb-2">
-                        <div class="w-3 h-3 rounded-full" style="background-color: ${cat.color}"></div>
-                        <span class="text-sm font-semibold truncate text-gray-200" title="${cat.name}">${cat.name}</span>
-                    </div>
-                    <div class="text-xs text-gray-400">
-                        Frames: <span class="font-mono text-white ml-1">${cat.count}</span>
-                    </div>
-                `;
-                datasetCollectionPanel.appendChild(card);
-            });
+            // Add Category Button
+            const addBtn = document.createElement('button');
+            addBtn.className = 'flex flex-col items-center justify-center bg-[#252525] border border-dashed border-[#555] hover:border-[#00A9E0] hover:text-[#00A9E0] rounded p-2 min-w-[60px] h-[64px] shrink-0 text-gray-400 transition-colors';
+            addBtn.innerHTML = `<span class="text-xl leading-none">+</span><span class="text-[10px] mt-1">Add</span>`;
+            addBtn.onclick = () => {
+                // Ensure we don't try to auto-label any box when adding from the panel
+                activeBoxIndex = -1;
+                openNewCategoryModal();
+            };
+            datasetCollectionPanel.appendChild(addBtn);
         }
 
         // --- Device Management Logic ---
@@ -513,8 +570,10 @@
                     renderDatasetCollection();
                 }
 
-                // Set the label immediately to the new category
-                setLabel(val);
+                // Set the label immediately to the new category if a box is active
+                if (activeBoxIndex >= 0) {
+                    setLabel(val);
+                }
             }
             closeNewCategoryModal();
         }

@@ -56,10 +56,18 @@
 
                 <!-- Canvas for drawing -->
                 <canvas id="annotation-canvas" class="absolute inset-0 cursor-crosshair w-full h-full"></canvas>
+
+                <!-- Flash Effect overlay -->
+                <div id="flash-effect" class="absolute inset-0 bg-white opacity-0 pointer-events-none hidden transition-opacity duration-100 z-10"></div>
+            </div>
+
+            <!-- Quick Tagging Action Bar -->
+            <div class="h-16 bg-[#252525] border-t border-[#333] px-6 py-2 flex items-center justify-center gap-4" id="quick-tagging-bar">
+                <!-- Action buttons will be injected here via JS -->
             </div>
 
             <!-- Dataset Collection Panel (Bottom of Middle Area) -->
-            <div class="h-28 bg-[#252525] border-t border-[#333] p-4 flex flex-col justify-start">
+            <div class="h-28 bg-[#1e1e1e] border-t border-[#333] p-4 flex flex-col justify-start">
                 <div class="text-xs text-gray-400 mb-2 flex justify-between items-center">
                     <span>Dataset Collection (Frames per Category)</span>
                     <span class="text-[10px] text-gray-500">Auto-extracting frames...</span>
@@ -174,6 +182,8 @@
         const cameraFeedImg = document.getElementById('camera-feed-img');
         const videoPlaceholderSvg = document.getElementById('video-placeholder-svg');
         const datasetCollectionPanel = document.getElementById('dataset-collection-panel');
+        const quickTaggingBar = document.getElementById('quick-tagging-bar');
+        const flashEffect = document.getElementById('flash-effect');
 
         // Modal Elements
         const newCategoryModal = document.getElementById('new-category-modal');
@@ -211,8 +221,54 @@
         ];
 
         // --- Dataset Collection Logic ---
+        function captureFrameToCategory(catName) {
+            const cat = categories.find(c => c.name === catName);
+            if (!cat) return;
+
+            // Trigger flash effect
+            flashEffect.classList.remove('hidden');
+            flashEffect.classList.remove('opacity-0');
+            flashEffect.classList.add('opacity-70');
+
+            setTimeout(() => {
+                flashEffect.classList.remove('opacity-70');
+                flashEffect.classList.add('opacity-0');
+                setTimeout(() => {
+                    flashEffect.classList.add('hidden');
+                }, 100);
+            }, 50);
+
+            // Increment count (simulating taking a snapshot)
+            cat.count += 1;
+            renderDatasetCollection();
+        }
+
+        function renderQuickTaggingBar() {
+            quickTaggingBar.innerHTML = '';
+
+            categories.forEach(cat => {
+                const btn = document.createElement('button');
+                btn.className = `flex-1 max-w-[150px] py-2 px-4 rounded font-bold text-white shadow-md hover:opacity-90 transition-opacity active:scale-95 flex items-center justify-center gap-2`;
+                btn.style.backgroundColor = cat.color;
+                btn.innerHTML = `
+                    <span>📸</span>
+                    <span class="truncate">${cat.name}</span>
+                `;
+                btn.onclick = () => captureFrameToCategory(cat.name);
+                quickTaggingBar.appendChild(btn);
+            });
+
+            // Add "New" button in the action bar too
+            const newBtn = document.createElement('button');
+            newBtn.className = `max-w-[100px] py-2 px-4 rounded border border-dashed border-[#555] text-gray-400 hover:text-white hover:border-white transition-colors flex items-center justify-center font-bold`;
+            newBtn.innerHTML = `+ New`;
+            newBtn.onclick = openNewCategoryModal;
+            quickTaggingBar.appendChild(newBtn);
+        }
+
         function renderDatasetCollection() {
             datasetCollectionPanel.innerHTML = '';
+            renderQuickTaggingBar();
 
             if (categories.length === 0) {
                 datasetCollectionPanel.innerHTML = '<span class="text-xs text-gray-500 italic">No categories created yet.</span>';
@@ -412,28 +468,18 @@
         function drawCanvas() {
             ctx.clearRect(0, 0, annotationCanvas.width, annotationCanvas.height);
 
-            // Draw all saved boxes
+            // Draw all saved boxes (Global ROIs)
             boxes.forEach(box => {
-                let boxColor = '#00A9E0'; // default color
-
-                if (box.label) {
-                    const cat = categories.find(c => c.name === box.label);
-                    if (cat) boxColor = cat.color;
-                }
-
-                ctx.strokeStyle = boxColor;
+                ctx.strokeStyle = '#00A9E0'; // default brand color for ROI
                 ctx.lineWidth = 2;
                 ctx.strokeRect(box.x, box.y, box.width, box.height);
 
-                if (box.label) {
-                    // Draw label background
-                    ctx.fillStyle = boxColor;
-                    ctx.fillRect(box.x, box.y - 20, ctx.measureText(box.label).width + 10, 20);
-                    // Draw label text
-                    ctx.fillStyle = 'white';
-                    ctx.font = 'bold 12px Arial';
-                    ctx.fillText(box.label, box.x + 5, box.y - 6);
-                }
+                // Draw "ROI" label to indicate its purpose
+                ctx.fillStyle = '#00A9E0';
+                ctx.fillRect(box.x, box.y - 20, 30, 20);
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 12px Arial';
+                ctx.fillText('ROI', box.x + 5, box.y - 6);
             });
 
             // Draw current box being drawn
@@ -463,21 +509,7 @@
             }, 2000); // Display for 2 seconds
         }
 
-        // --- Context Menu Logic ---
-        function renderContextMenuItems() {
-            contextMenuItemsEl.innerHTML = '';
-            categories.forEach(cat => {
-                const item = document.createElement('div');
-                item.className = 'px-4 py-2 hover:bg-[#333] hover:text-white cursor-pointer flex items-center gap-2';
-                item.onclick = () => setLabel(cat.name);
-                item.innerHTML = `
-                    <div class="w-2 h-2 rounded-full" style="background-color: ${cat.color}"></div>
-                    ${cat.name}
-                `;
-                contextMenuItemsEl.appendChild(item);
-            });
-        }
-
+        // --- Global ROI Context Menu (Delete only) ---
         annotationCanvas.addEventListener('contextmenu', (e) => {
             e.preventDefault();
 
@@ -496,60 +528,14 @@
             }
 
             if (clickedBoxIndex !== -1) {
-                activeBoxIndex = clickedBoxIndex;
-                renderContextMenuItems();
-                contextMenuEl.style.left = `${e.clientX}px`;
-                contextMenuEl.style.top = `${e.clientY}px`;
-                contextMenuEl.classList.remove('hidden');
-            } else {
-                hideContextMenu();
+                // Remove the clicked box
+                boxes.splice(clickedBoxIndex, 1);
+                drawCanvas();
             }
         });
-
-        function hideContextMenu() {
-            contextMenuEl.classList.add('hidden');
-            activeBoxIndex = -1;
-        }
-
-        // Hide menu when clicking elsewhere
-        document.addEventListener('click', (e) => {
-            if (e.button !== 2) {
-                hideContextMenu();
-            }
-        });
-
-        function setLabel(labelStr) {
-            if (activeBoxIndex !== -1) {
-                // Determine if modifying an existing label
-                const oldLabel = boxes[activeBoxIndex].label;
-
-                if (oldLabel !== labelStr) {
-                    boxes[activeBoxIndex].label = labelStr;
-                    drawCanvas();
-
-                    // Update counts
-                    const newCat = categories.find(c => c.name === labelStr);
-                    if (newCat) {
-                        // Simulate multiple frames being collected per box (e.g. 15 frames)
-                        newCat.count += 15;
-                    }
-
-                    if (oldLabel) {
-                        const oldCat = categories.find(c => c.name === oldLabel);
-                        if (oldCat && oldCat.count > 0) {
-                            oldCat.count -= 15;
-                        }
-                    }
-
-                    renderDatasetCollection();
-                }
-            }
-            hideContextMenu();
-        }
 
         // --- Custom Category Modal Logic ---
         function openNewCategoryModal() {
-            hideContextMenu();
             newCategoryInput.value = '';
             newCategoryModal.classList.remove('hidden');
             newCategoryInput.focus();
@@ -570,10 +556,7 @@
                     renderDatasetCollection();
                 }
 
-                // Set the label immediately to the new category if a box is active
-                if (activeBoxIndex >= 0) {
-                    setLabel(val);
-                }
+                // If the Quick Tagging Action Bar exists, it will be updated by renderDatasetCollection
             }
             closeNewCategoryModal();
         }

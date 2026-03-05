@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPC Personalized Self-Training PC Client</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Custom styles */
+        body {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        /* Brand Colors */
+        .text-brand { color: #00A9E0; }
+        .bg-brand { background-color: #00A9E0; }
+        .border-brand { border-color: #00A9E0; }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col bg-[#1a1a1a] text-white overflow-hidden">
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-row w-full h-full overflow-hidden">
+
+        <!-- Left Sidebar: Device Manager -->
+        <div id="device-manager" class="w-64 bg-[#252525] border-r border-[#333] flex flex-col">
+            <div class="p-4 border-b border-[#333] font-bold text-lg text-brand">Device Manager</div>
+            <div class="flex-1 overflow-y-auto p-2" id="device-list">
+                <!-- Devices rendered via JS -->
+            </div>
+        </div>
+
+        <!-- Middle Main Area: Annotation Workspace -->
+        <div id="annotation-workspace" class="flex-1 flex flex-col bg-[#1e1e1e] relative">
+            <!-- Workspace Header -->
+            <div class="h-14 border-b border-[#333] flex items-center justify-between px-6 bg-[#252525]">
+                <div class="font-bold text-lg" id="selected-device-title">Select a device...</div>
+            </div>
+
+            <!-- Video Pane -->
+            <div class="flex-1 relative bg-black flex items-center justify-center m-4 rounded-lg overflow-hidden border border-[#333]">
+                <!-- Video Placeholder -->
+                <div class="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none">
+                    <svg class="w-24 h-24 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                </div>
+                <!-- Canvas for drawing -->
+                <canvas id="annotation-canvas" class="absolute inset-0 cursor-crosshair w-full h-full"></canvas>
+            </div>
+
+            <!-- Timeline (Bottom of Middle Area) -->
+            <div class="h-24 bg-[#252525] border-t border-[#333] p-4 flex flex-col justify-center">
+                <div class="text-xs text-gray-400 mb-2">Timeline (Extract Frames)</div>
+                <div class="w-full h-8 bg-[#1a1a1a] rounded-md relative flex items-center">
+                    <!-- Timeline simulation -->
+                    <div class="absolute left-1/4 h-full w-2 bg-brand bg-opacity-50"></div>
+                    <div class="absolute left-1/2 h-full w-2 bg-brand bg-opacity-50"></div>
+                    <div class="absolute left-3/4 h-full w-2 bg-brand bg-opacity-50"></div>
+                    <div class="h-full w-1 bg-white absolute left-1/3 cursor-ew-resize"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Sidebar: Training & Monitor -->
+        <div id="training-monitor" class="w-80 bg-[#252525] border-l border-[#333] flex flex-col">
+            <div class="p-4 border-b border-[#333] font-bold text-lg text-brand">Training & Monitor</div>
+
+            <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-6">
+                <!-- Performance Monitor -->
+                <div class="bg-[#1a1a1a] rounded p-4 border border-[#333]">
+                    <div class="text-sm text-gray-400 mb-2">Local PC Performance</div>
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-xs">CPU Usage</span>
+                        <span class="text-xs font-mono" id="cpu-usage">12%</span>
+                    </div>
+                    <div class="w-full bg-[#333] h-2 rounded-full mb-3">
+                        <div class="bg-brand h-2 rounded-full" style="width: 12%" id="cpu-bar"></div>
+                    </div>
+
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-xs">Memory Usage</span>
+                        <span class="text-xs font-mono" id="mem-usage">4.2 GB</span>
+                    </div>
+                    <div class="w-full bg-[#333] h-2 rounded-full">
+                        <div class="bg-purple-500 h-2 rounded-full" style="width: 45%" id="mem-bar"></div>
+                    </div>
+                </div>
+
+                <!-- Training Chart (Hidden initially) -->
+                <div id="training-chart-container" class="bg-[#1a1a1a] rounded p-4 border border-[#333] hidden flex-col">
+                    <div class="text-sm text-gray-400 mb-2">Accuracy Growth</div>
+                    <canvas id="accuracyChart" width="100" height="60"></canvas>
+                </div>
+
+            </div>
+
+            <!-- Training Control -->
+            <div class="p-4 border-t border-[#333] bg-[#1e1e1e]">
+                <button id="start-training-btn" class="w-full bg-brand hover:bg-[#008CBA] text-white font-bold py-3 px-4 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    Start Training
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Bottom Status Bar -->
+    <div class="h-12 bg-[#1e1e1e] border-t border-[#333] flex items-center justify-between px-6 shrink-0">
+        <div class="text-xs text-gray-400 flex items-center" id="status-text">
+            <span class="inline-block w-2 h-2 rounded-full bg-green-500 mr-2"></span>
+            System Ready
+        </div>
+        <button id="deploy-btn" class="bg-transparent border border-gray-600 text-gray-400 font-bold py-1 px-4 rounded text-sm transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+            Sync Model to Device
+        </button>
+    </div>
+
+    <!-- Right-click Context Menu -->
+    <div id="context-menu" class="hidden absolute z-50 bg-[#2a2a2a] border border-[#444] rounded shadow-lg py-1 text-sm text-gray-200">
+        <div class="px-4 py-2 hover:bg-brand hover:text-white cursor-pointer" onclick="setLabel('Full')">Full</div>
+        <div class="px-4 py-2 hover:bg-brand hover:text-white cursor-pointer" onclick="setLabel('Empty')">Empty</div>
+        <div class="px-4 py-2 hover:bg-brand hover:text-white cursor-pointer" onclick="setLabel('My Car')">My Car</div>
+    </div>
+
+    <!-- Small Box Toast Warning -->
+    <div id="toast-warning" class="hidden fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-yellow-500 text-black px-6 py-3 rounded-md shadow-lg font-bold z-50 transition-opacity duration-300">
+        Warning: Bounding box too small (under 32x32 pixels)!
+    </div>
+
+    <script>
+        // --- State ---
+        let selectedDevice = null;
+        let isTraining = false;
+
+        const devices = [
+            { id: 'dev1', name: 'RLC-811A (Front Door)', status: 'online' },
+            { id: 'dev2', name: 'E1 Zoom (Living Room)', status: 'online' },
+            { id: 'dev3', name: 'B800 (Garage)', status: 'offline' }
+        ];
+
+        // --- DOM Elements ---
+        const deviceListEl = document.getElementById('device-list');
+        const selectedDeviceTitleEl = document.getElementById('selected-device-title');
+        const annotationWorkspaceEl = document.getElementById('annotation-workspace');
+        const annotationCanvas = document.getElementById('annotation-canvas');
+        const ctx = annotationCanvas.getContext('2d');
+        const toastWarningEl = document.getElementById('toast-warning');
+        const contextMenuEl = document.getElementById('context-menu');
+
+        // Monitoring Elements
+        const cpuUsageEl = document.getElementById('cpu-usage');
+        const cpuBarEl = document.getElementById('cpu-bar');
+        const memUsageEl = document.getElementById('mem-usage');
+        const memBarEl = document.getElementById('mem-bar');
+
+        // Training Control Elements
+        const startTrainingBtn = document.getElementById('start-training-btn');
+        const trainingChartContainer = document.getElementById('training-chart-container');
+        const accuracyChartCtx = document.getElementById('accuracyChart').getContext('2d');
+
+        // Deployment Elements
+        const deployBtn = document.getElementById('deploy-btn');
+        const statusTextEl = document.getElementById('status-text');
+
+        // --- Annotation State ---
+        let boxes = [];
+        let isDrawing = false;
+        let startX = 0;
+        let startY = 0;
+        let currentX = 0;
+        let currentY = 0;
+        let activeBoxIndex = -1; // For context menu
+
+        // --- Device Management Logic ---
+        function renderDevices() {
+            deviceListEl.innerHTML = '';
+            devices.forEach(device => {
+                const item = document.createElement('div');
+                const isSelected = selectedDevice && selectedDevice.id === device.id;
+                const statusColor = device.status === 'online' ? 'bg-green-500' : 'bg-red-500';
+
+                item.className = `p-3 mb-2 rounded cursor-pointer border flex items-center justify-between transition-colors
+                                  ${isSelected ? 'bg-[#333] border-brand' : 'bg-[#1a1a1a] border-[#333] hover:border-gray-500'}
+                                  ${device.status === 'offline' ? 'opacity-50' : ''}`;
+
+                item.innerHTML = `
+                    <div class="flex flex-col">
+                        <span class="font-semibold text-sm ${isSelected ? 'text-brand' : 'text-gray-200'}">${device.name}</span>
+                        <span class="text-xs text-gray-500 capitalize">${device.status}</span>
+                    </div>
+                    <div class="w-2 h-2 rounded-full ${statusColor}"></div>
+                `;
+
+                if (device.status === 'online') {
+                    item.onclick = () => selectDevice(device);
+                } else {
+                    item.onclick = () => alert('Cannot select an offline device.');
+                }
+
+                deviceListEl.appendChild(item);
+            });
+        }
+
+        function selectDevice(device) {
+            if (isTraining) return; // Prevent switching during training
+            selectedDevice = device;
+            selectedDeviceTitleEl.textContent = `Annotating: ${device.name}`;
+
+            // Enable workspace
+            annotationWorkspaceEl.classList.remove('opacity-50', 'pointer-events-none');
+
+            renderDevices();
+
+            // Reset canvas when switching devices
+            boxes = [];
+            resizeCanvas();
+            drawCanvas();
+        }
+
+        // --- Canvas Annotation Logic ---
+        function resizeCanvas() {
+            // Ensure internal resolution matches CSS display size
+            const rect = annotationCanvas.parentElement.getBoundingClientRect();
+            annotationCanvas.width = rect.width;
+            annotationCanvas.height = rect.height;
+        }
+
+        window.addEventListener('resize', () => {
+            if (selectedDevice) {
+                resizeCanvas();
+                drawCanvas();
+            }
+        });
+
+        function getMousePos(evt) {
+            const rect = annotationCanvas.getBoundingClientRect();
+            return {
+                x: evt.clientX - rect.left,
+                y: evt.clientY - rect.top
+            };
+        }
+
+        annotationCanvas.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) return; // Only trigger on left-click
+            const pos = getMousePos(e);
+            startX = pos.x;
+            startY = pos.y;
+            currentX = pos.x;
+            currentY = pos.y;
+            isDrawing = true;
+        });
+
+        annotationCanvas.addEventListener('mousemove', (e) => {
+            if (!isDrawing) return;
+            const pos = getMousePos(e);
+            currentX = pos.x;
+            currentY = pos.y;
+            drawCanvas();
+        });
+
+        annotationCanvas.addEventListener('mouseup', (e) => {
+            if (!isDrawing || e.button !== 0) return;
+            isDrawing = false;
+
+            const w = Math.abs(currentX - startX);
+            const h = Math.abs(currentY - startY);
+            const x = Math.min(startX, currentX);
+            const y = Math.min(startY, currentY);
+
+            // Ignore accidental clicks
+            if (w < 5 && h < 5) {
+                drawCanvas();
+                return;
+            }
+
+            // Check if too small
+            if (w < 32 || h < 32) {
+                showToastWarning();
+                drawCanvas(); // don't save the box
+                return;
+            }
+
+            // Save box
+            boxes.push({ x, y, width: w, height: h, label: null });
+            drawCanvas();
+        });
+
+        function drawCanvas() {
+            ctx.clearRect(0, 0, annotationCanvas.width, annotationCanvas.height);
+
+            // Draw all saved boxes
+            boxes.forEach(box => {
+                ctx.strokeStyle = '#00A9E0';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(box.x, box.y, box.width, box.height);
+
+                if (box.label) {
+                    // Draw label background
+                    ctx.fillStyle = '#00A9E0';
+                    ctx.fillRect(box.x, box.y - 20, ctx.measureText(box.label).width + 10, 20);
+                    // Draw label text
+                    ctx.fillStyle = 'white';
+                    ctx.font = '12px Arial';
+                    ctx.fillText(box.label, box.x + 5, box.y - 6);
+                }
+            });
+
+            // Draw current box being drawn
+            if (isDrawing) {
+                const w = currentX - startX;
+                const h = currentY - startY;
+                ctx.strokeStyle = 'rgba(0, 169, 224, 0.8)';
+                ctx.setLineDash([5, 5]);
+                ctx.lineWidth = 2;
+                ctx.strokeRect(startX, startY, w, h);
+                ctx.setLineDash([]); // Reset dash
+            }
+        }
+
+        function showToastWarning() {
+            toastWarningEl.classList.remove('hidden');
+            toastWarningEl.classList.add('opacity-100');
+
+            setTimeout(() => {
+                toastWarningEl.classList.remove('opacity-100');
+                toastWarningEl.classList.add('opacity-0');
+
+                setTimeout(() => {
+                    toastWarningEl.classList.add('hidden');
+                    toastWarningEl.classList.remove('opacity-0');
+                }, 300); // Wait for transition
+            }, 2000); // Display for 2 seconds
+        }
+
+        // --- Context Menu Logic ---
+        annotationCanvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+
+            // Check if right-clicked inside any box
+            const pos = getMousePos(e);
+            let clickedBoxIndex = -1;
+
+            // Iterate backwards to pick the topmost box
+            for (let i = boxes.length - 1; i >= 0; i--) {
+                const box = boxes[i];
+                if (pos.x >= box.x && pos.x <= box.x + box.width &&
+                    pos.y >= box.y && pos.y <= box.y + box.height) {
+                    clickedBoxIndex = i;
+                    break;
+                }
+            }
+
+            if (clickedBoxIndex !== -1) {
+                activeBoxIndex = clickedBoxIndex;
+                contextMenuEl.style.left = `${e.clientX}px`;
+                contextMenuEl.style.top = `${e.clientY}px`;
+                contextMenuEl.classList.remove('hidden');
+            } else {
+                hideContextMenu();
+            }
+        });
+
+        function hideContextMenu() {
+            contextMenuEl.classList.add('hidden');
+            activeBoxIndex = -1;
+        }
+
+        // Hide menu when clicking elsewhere
+        document.addEventListener('click', (e) => {
+            if (e.button !== 2) {
+                hideContextMenu();
+            }
+        });
+
+        function setLabel(labelStr) {
+            if (activeBoxIndex !== -1) {
+                boxes[activeBoxIndex].label = labelStr;
+                drawCanvas();
+            }
+            hideContextMenu();
+        }
+
+        // --- Performance Monitor Simulation ---
+        function updatePerformanceStats() {
+            // CPU: Base 10-20% when idle, 80-95% when training
+            const cpuBase = isTraining ? 80 : 10;
+            const cpuVar = isTraining ? 15 : 10;
+            const cpu = Math.floor(cpuBase + Math.random() * cpuVar);
+
+            // Mem: Base 4.0-4.5 GB idle, 12.0-14.0 GB when training
+            const memBase = isTraining ? 12.0 : 4.0;
+            const memVar = isTraining ? 2.0 : 0.5;
+            const mem = (memBase + Math.random() * memVar).toFixed(1);
+
+            // Map mem to a percentage (Assume 16GB max)
+            const memPercent = (parseFloat(mem) / 16.0) * 100;
+
+            cpuUsageEl.textContent = `${cpu}%`;
+            cpuBarEl.style.width = `${cpu}%`;
+
+            memUsageEl.textContent = `${mem} GB`;
+            memBarEl.style.width = `${memPercent}%`;
+        }
+
+        setInterval(updatePerformanceStats, 1500);
+
+        // --- Training Logic ---
+        let accuracyChart = null;
+
+        startTrainingBtn.addEventListener('click', () => {
+            if (!selectedDevice) {
+                alert("Please select a device first!");
+                return;
+            }
+            if (boxes.length === 0) {
+                alert("Please draw at least one bounding box to train!");
+                return;
+            }
+
+            // Start training mode
+            isTraining = true;
+            startTrainingBtn.disabled = true;
+            startTrainingBtn.textContent = 'Training in Progress...';
+            deployBtn.disabled = true;
+            deployBtn.classList.remove('text-white', 'border-brand', 'bg-brand', 'bg-opacity-20');
+            statusTextEl.innerHTML = `<span class="inline-block w-2 h-2 rounded-full bg-yellow-500 mr-2 animate-pulse"></span> Training Model...`;
+
+            // Show Chart
+            trainingChartContainer.classList.remove('hidden');
+            trainingChartContainer.classList.add('flex');
+
+            if (accuracyChart) {
+                accuracyChart.destroy();
+            }
+
+            // Init Chart.js
+            accuracyChart = new Chart(accuracyChartCtx, {
+                type: 'line',
+                data: {
+                    labels: ['0', '1', '2', '3', '4', '5'],
+                    datasets: [{
+                        label: 'Accuracy (%)',
+                        data: [0, 0, 0, 0, 0, 0],
+                        borderColor: '#00A9E0',
+                        backgroundColor: 'rgba(0, 169, 224, 0.2)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#00A9E0'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            grid: { color: '#333' },
+                            ticks: { color: '#888', font: { size: 10 } }
+                        },
+                        x: {
+                            grid: { color: '#333' },
+                            ticks: { color: '#888', font: { size: 10 } }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    animation: {
+                        duration: 0
+                    }
+                }
+            });
+
+            // Simulate Training Progress
+            let progress = 0;
+            const totalSteps = 10;
+            const accuracyCurve = [10, 35, 60, 75, 85, 92, 95, 97, 98, 99];
+
+            const trainingInterval = setInterval(() => {
+                progress++;
+
+                // Update chart
+                if (progress <= 5) {
+                    accuracyChart.data.datasets[0].data[progress] = accuracyCurve[progress - 1];
+                } else {
+                    // Shift data for sliding window effect
+                    accuracyChart.data.labels.push((progress).toString());
+                    accuracyChart.data.labels.shift();
+
+                    accuracyChart.data.datasets[0].data.push(accuracyCurve[progress - 1] || 99);
+                    accuracyChart.data.datasets[0].data.shift();
+                }
+                accuracyChart.update();
+
+                // Check completion
+                if (progress >= totalSteps) {
+                    clearInterval(trainingInterval);
+                    finishTraining();
+                }
+            }, 800);
+        });
+
+        function finishTraining() {
+            isTraining = false;
+            startTrainingBtn.disabled = false;
+            startTrainingBtn.textContent = 'Retrain Model';
+
+            statusTextEl.innerHTML = `<span class="inline-block w-2 h-2 rounded-full bg-green-500 mr-2"></span> Training Complete`;
+
+            // Enable Deploy Button
+            deployBtn.disabled = false;
+            deployBtn.classList.remove('text-gray-400', 'border-gray-600');
+            deployBtn.classList.add('text-white', 'border-brand', 'bg-brand', 'bg-opacity-20', 'hover:bg-opacity-40');
+        }
+
+        // --- Deployment Logic ---
+        deployBtn.addEventListener('click', () => {
+            if (!selectedDevice || deployBtn.disabled) return;
+
+            // Start deployment
+            deployBtn.disabled = true;
+            deployBtn.classList.remove('hover:bg-opacity-40');
+            deployBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            deployBtn.innerHTML = `
+                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Deploying...
+            `;
+
+            statusTextEl.innerHTML = `<span class="inline-block w-2 h-2 rounded-full bg-yellow-500 mr-2 animate-pulse"></span> Generating quantization upgrade package for ${selectedDevice.name}...`;
+
+            // Simulate deployment process
+            setTimeout(() => {
+                deployBtn.innerHTML = `Sync Model to Device`;
+                deployBtn.disabled = false;
+                deployBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                deployBtn.classList.add('hover:bg-opacity-40');
+
+                statusTextEl.innerHTML = `<span class="inline-block w-2 h-2 rounded-full bg-green-500 mr-2"></span> Deploy Success`;
+
+                // Show brief success alert
+                setTimeout(() => {
+                    alert(`Model successfully deployed to ${selectedDevice.name}!`);
+                }, 100);
+            }, 3000);
+        });
+
+        // --- Init ---
+        function initApp() {
+            // Disable workspace initially
+            annotationWorkspaceEl.classList.add('opacity-50', 'pointer-events-none');
+            renderDevices();
+            resizeCanvas();
+        }
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>

@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Reolink Rich Notifications Popup</title>
+    <style>
+        /* Base Reset & Variables */
+        :root {
+            --reo-blue: #005EBC;
+            --reo-blue-light: #EBF3FA;
+            --reo-gray-bg: #F4F6F9;
+            --reo-text-main: #333333;
+            --reo-text-secondary: #666666;
+            --reo-border: #E5E7EB;
+            --reo-danger: #ef4444;
+            --reo-success: #10b981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Mobile Container */
+        .app-container {
+            width: 100%;
+            max-width: 414px; /* iPhone Max width */
+            height: 896px; /* iPhone Max height */
+            background-color: var(--reo-gray-bg);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border-radius: 40px; /* Simulate phone screen */
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* StatusBar */
+        .status-bar {
+            height: 44px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 24px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #000;
+            z-index: 10;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--reo-text-main);
+        }
+
+        .header-icon {
+            width: 28px;
+            height: 28px;
+            border: 2px solid var(--reo-text-main);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+            color: var(--reo-text-main);
+            cursor: pointer;
+        }
+
+        /* Subheader */
+        .subheader {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px 12px;
+        }
+
+        .subheader h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--reo-text-main);
+        }
+
+        .subheader-icons {
+            display: flex;
+            gap: 16px;
+        }
+
+        .subheader-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+        }
+
+        .subheader-icon span {
+            display: block;
+            height: 2px;
+            background-color: var(--reo-text-main);
+            border-radius: 2px;
+        }
+
+        /* Shortcuts Card */
+        .shortcuts-card {
+            margin: 0 20px 20px;
+            background: linear-gradient(135deg, #ffffff 0%, #f0f7ff 100%);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .shortcuts-card h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--reo-text-main);
+        }
+
+        .shortcuts-card p {
+            font-size: 14px;
+            color: var(--reo-text-secondary);
+            max-width: 60%;
+            line-height: 1.4;
+        }
+
+        /* Device List Content */
+        .content {
+            flex: 1;
+            padding: 0 20px;
+            overflow-y: auto;
+            padding-bottom: 100px; /* Space for navbar */
+        }
+
+        /* Dummy Device Card */
+        .device-card {
+            background-color: #fff;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+
+        .device-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+        }
+
+        .device-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .device-icon-small {
+            width: 24px;
+            height: 32px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+
+        .device-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--reo-text-main);
+        }
+
+        .device-more {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 8px;
+        }
+
+        .device-more span {
+            width: 16px;
+            height: 2px;
+            background-color: var(--reo-text-main);
+            border-radius: 2px;
+        }
+
+        /* Privacy Placeholder for Camera Feed */
+        .device-feed-placeholder {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(180deg, #e2e8f0 0%, #cbd5e1 100%);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .feed-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .feed-top {
+            display: flex;
+            justify-content: space-between;
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            font-size: 12px;
+        }
+
+        .feed-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .feed-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .battery-icon {
+            width: 24px;
+            height: 12px;
+            border: 2px solid #fff;
+            border-radius: 2px;
+            position: relative;
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            padding: 1px;
+        }
+
+        .battery-level {
+            height: 100%;
+            width: 80%;
+            background-color: var(--reo-success);
+        }
+
+        .privacy-icon {
+            width: 48px;
+            height: 48px;
+            background-color: rgba(255,255,255,0.8);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--reo-text-main);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .privacy-icon svg { width: 24px; height: 24px; }
+
+        /* Bottom Navbar */
+        .bottom-nav {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 84px;
+            background-color: #fff;
+            border-top: 1px solid var(--reo-border);
+            display: flex;
+            justify-content: space-around;
+            padding-top: 12px;
+            z-index: 10;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            color: var(--reo-text-secondary);
+            font-size: 11px;
+        }
+
+        .nav-item.active {
+            color: var(--reo-blue);
+        }
+
+        .nav-icon {
+            width: 24px;
+            height: 24px;
+        }
+        .nav-item.active .nav-icon {
+            fill: var(--reo-blue);
+        }
+        .nav-item:not(.active) .nav-icon {
+            fill: none;
+            stroke: var(--reo-text-secondary);
+            stroke-width: 2;
+        }
+
+        /* Floating Action Button */
+        .fab {
+            position: absolute;
+            bottom: 40px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            background-color: var(--reo-blue);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0,94,188,0.4);
+            z-index: 15;
+            cursor: pointer;
+        }
+        .fab svg {
+            width: 24px;
+            height: 24px;
+            fill: #fff;
+        }
+
+        /* Overlay */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(2px);
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end; /* Bottom sheet style */
+            padding: 0;
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+
+        /* Popup Modal */
+        .popup {
+            background-color: #fff;
+            width: 100%;
+            border-radius: 24px 24px 0 0;
+            padding: 32px 24px 40px; /* Extra bottom padding for safe area */
+            box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transform: translateY(100%);
+            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes fadeIn {
+            from { background-color: rgba(0,0,0,0); backdrop-filter: blur(0px); }
+            to { background-color: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        /* Popup Graphic */
+        .popup-graphic {
+            width: 80px;
+            height: 80px;
+            background-color: var(--reo-blue-light);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        .popup-graphic svg {
+            width: 40px;
+            height: 40px;
+            fill: var(--reo-blue);
+        }
+
+        .badge-image {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 32px;
+            height: 32px;
+            background-color: #fff;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+        .badge-image svg {
+            width: 16px;
+            height: 16px;
+            fill: var(--reo-blue);
+        }
+
+        /* Popup Content */
+        .popup-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--reo-text-main);
+            margin-bottom: 12px;
+            text-align: center;
+        }
+
+        .popup-desc {
+            font-size: 15px;
+            color: var(--reo-text-secondary);
+            text-align: center;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        /* Device Info List */
+        .info-list {
+            width: 100%;
+            background-color: var(--reo-gray-bg);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 28px;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .info-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .info-icon {
+            width: 24px;
+            height: 24px;
+            background-color: rgba(0,94,188,0.1);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .info-icon svg {
+            width: 14px;
+            height: 14px;
+            fill: var(--reo-blue);
+        }
+
+        .info-text {
+            flex: 1;
+        }
+
+        .info-text p {
+            font-size: 14px;
+            color: var(--reo-text-main);
+            line-height: 1.5;
+            font-weight: 500;
+        }
+
+        .info-text .highlight {
+            color: var(--reo-blue);
+            font-weight: 700;
+            margin: 0 2px;
+        }
+
+        .info-text .sub-text {
+            font-size: 12px;
+            color: var(--reo-text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Buttons */
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            text-align: center;
+            transition: opacity 0.2s;
+        }
+
+        .btn:active {
+            opacity: 0.8;
+        }
+
+        .btn-primary {
+            background-color: var(--reo-blue);
+            color: #fff;
+            margin-bottom: 12px;
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            color: var(--reo-text-secondary);
+        }
+
+        /* Drag Handle */
+        .drag-handle {
+            width: 36px;
+            height: 4px;
+            background-color: var(--reo-border);
+            border-radius: 2px;
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <!-- Status Bar (Dummy) -->
+    <div class="status-bar">
+        <span>9:47</span>
+        <div style="display: flex; gap: 4px; align-items: center;">
+            <svg width="18" height="12" viewBox="0 0 18 12" fill="none"><path d="M1 11H3V8H5V5H7V2H9" stroke="black" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg width="18" height="12" viewBox="0 0 18 12" fill="none"><path d="M1 6C5 2 13 2 17 6M4 9C7.5 6 10.5 6 14 9" stroke="black" stroke-width="2" stroke-linecap="round"/></svg>
+            <div style="width: 24px; height: 12px; border: 1px solid black; border-radius: 4px; position: relative;">
+                <div style="background: black; width: 75%; height: 100%; border-radius: 3px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- App Header -->
+    <div class="header">
+        <h1>Local Devices</h1>
+        <div class="header-icon">+</div>
+    </div>
+
+    <!-- Subheader -->
+    <div class="subheader">
+        <h2>Device</h2>
+        <div class="subheader-icons">
+            <div class="subheader-icon" style="flex-direction: row; gap: 4px;">
+                <span style="width: 2px; height: 16px; align-self: center;"></span>
+                <span style="width: 2px; height: 24px; align-self: flex-end;"></span>
+            </div>
+            <div class="subheader-icon">
+                <span style="width: 16px;"></span>
+                <span style="width: 16px;"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shortcuts -->
+    <div class="shortcuts-card">
+        <h3>Shortcuts</h3>
+        <p>One tap to control motion alerts of all devices.</p>
+        <!-- Abstract background graphics for shortcut card -->
+        <svg style="position: absolute; right: -10px; top: -10px; width: 120px; height: 120px; opacity: 0.1;" viewBox="0 0 100 100">
+            <rect x="20" y="20" width="60" height="60" rx="10" fill="var(--reo-blue)" transform="rotate(45 50 50)"/>
+            <circle cx="50" cy="50" r="15" fill="#fff"/>
+        </svg>
+    </div>
+
+    <!-- Content / Device List -->
+    <div class="content">
+        <!-- Device 1 Placeholder -->
+        <div class="device-card">
+            <div class="device-header">
+                <div class="device-info">
+                    <div class="device-icon-small"></div>
+                    <span class="device-name">Front Door</span>
+                </div>
+                <div class="device-more">
+                    <span></span><span></span>
+                </div>
+            </div>
+            <div class="device-feed-placeholder">
+                <div class="feed-overlay">
+                    <div class="feed-top">
+                        <span>Reolink</span>
+                        <span>2026/03/15 01:23:55 pm SUN</span>
+                    </div>
+                    <div class="feed-bottom">
+                        <div>
+                            <div class="feed-title">Front Door</div>
+                            <div class="battery-icon"><div class="battery-level"></div></div>
+                        </div>
+                        <span style="font-size: 12px;">Front Door</span>
+                    </div>
+                </div>
+                <div class="privacy-icon">
+                    <!-- Home/Camera abstract icon for privacy -->
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                </div>
+                <div style="margin-top: 12px; color: var(--reo-text-secondary); font-size: 14px; font-weight: 500;">
+                    Privacy Protected View
+                </div>
+            </div>
+        </div>
+
+        <!-- Device 2 Placeholder -->
+        <div class="device-card">
+            <div class="device-header">
+                <div class="device-info">
+                    <div class="device-icon-small" style="border-radius: 50%;"></div>
+                    <span class="device-name">Living Room</span>
+                </div>
+                <div class="device-more">
+                    <span></span><span></span>
+                </div>
+            </div>
+            <div class="device-feed-placeholder" style="background: linear-gradient(180deg, #d1d5db 0%, #94a3b8 100%);">
+                <div class="feed-overlay">
+                    <div class="feed-top">
+                        <span>Reolink</span>
+                        <span>2026/03/15 12:42:19 pm SUN</span>
+                    </div>
+                    <div class="feed-bottom">
+                        <div>
+                            <div class="feed-title">Living Room</div>
+                            <div class="battery-icon" style="display:none;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="privacy-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                        <circle cx="12" cy="13" r="4"></circle>
+                    </svg>
+                </div>
+                <div style="margin-top: 12px; color: var(--reo-text-secondary); font-size: 14px; font-weight: 500;">
+                    Privacy Protected View
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Nav -->
+    <div class="bottom-nav">
+        <div class="nav-item active">
+            <svg class="nav-icon" viewBox="0 0 24 24">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke="none"></path>
+            </svg>
+            <span>Home</span>
+        </div>
+        <div class="nav-item">
+            <svg class="nav-icon" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+            </svg>
+            <span>Explore</span>
+        </div>
+        <div class="nav-item">
+            <svg class="nav-icon" viewBox="0 0 24 24">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span>Me</span>
+        </div>
+    </div>
+
+    <!-- Floating Settings Button (From screenshot) -->
+    <div class="fab">
+        <svg viewBox="0 0 24 24">
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+        </svg>
+    </div>
+
+    <!-- Popup Overlay -->
+    <div class="overlay" id="popupOverlay">
+        <div class="popup">
+            <div class="drag-handle"></div>
+
+            <!-- Graphic Header -->
+            <div class="popup-graphic">
+                <!-- Bell Icon -->
+                <svg viewBox="0 0 24 24">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                <!-- Image Badge Icon -->
+                <div class="badge-image">
+                    <svg viewBox="0 0 24 24">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Title & Description -->
+            <h3 class="popup-title">开启带图推送</h3>
+            <p class="popup-desc">登录账号并升级设备，即可在推送通知中直接查看报警画面，随时掌握安全动态。</p>
+
+            <!-- Condition List -->
+            <div class="info-list">
+                <!-- Requirement 1 -->
+                <div class="info-item">
+                    <div class="info-icon">
+                        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    </div>
+                    <div class="info-text">
+                        <p>有 <span class="highlight">2</span> 台设备登录账号后即可支持</p>
+                        <div class="sub-text">绑定账号以开通推送服务</div>
+                    </div>
+                </div>
+
+                <!-- Requirement 2 -->
+                <div class="info-item">
+                    <div class="info-icon">
+                        <svg viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.92-10.44l5.66-5.66"></path></svg>
+                    </div>
+                    <div class="info-text">
+                        <p>有 <span class="highlight">3</span> 台设备需升级并登录后支持</p>
+                        <div class="sub-text">更新固件至最新版本以获取此功能</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <button class="btn btn-primary" onclick="closePopup()">立即处理</button>
+            <button class="btn btn-secondary" onclick="closePopup()">暂不开启</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function closePopup() {
+        const overlay = document.getElementById('popupOverlay');
+        const popup = overlay.querySelector('.popup');
+
+        // Reverse animations
+        popup.style.animation = 'slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards';
+        overlay.style.animation = 'fadeOut 0.3s ease-out forwards';
+
+        setTimeout(() => {
+            overlay.style.display = 'none';
+        }, 300);
+    }
+
+    // Add keyframes for closing
+    const style = document.createElement('style');
+    style.innerHTML = `
+        @keyframes slideDown {
+            from { transform: translateY(0); }
+            to { transform: translateY(100%); }
+        }
+        @keyframes fadeOut {
+            from { background-color: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
+            to { background-color: rgba(0,0,0,0); backdrop-filter: blur(0px); }
+        }
+    `;
+    document.head.appendChild(style);
+</script>
+
+</body>
+</html>
